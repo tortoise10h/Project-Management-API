@@ -1,0 +1,65 @@
+{
+    "name": "edu-mim-api",
+    "version": "1.0.0",
+    "description": "Multi-institutes management system",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "nodemon index.js",
+        "init": "node bin/create_test_data.js",
+        "lint": "eslint '{,!(node_modules)/**}/*.js'",
+        "lint-fix": "eslint '{,!(node_modules)/**}/*.js' --fix",
+        "test": "mocha '{,!(node_modules)/**}/*.test.js'",
+        "seed": "node bin/seed.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/digitechglobal/Edu-MiM-API.git"
+    },
+    "author": "Digitech Global Hub",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/digitechglobal/Edu-MiM-API/issues"
+    },
+    "homepage": "https://github.com/digitechglobal/Edu-MiM-API#readme",
+    "devDependencies": {
+        "eslint": "^5.15.3",
+        "eslint-config-airbnb": "^17.1.0",
+        "eslint-config-airbnb-base": "^13.1.0",
+        "eslint-plugin-import": "^2.16.0",
+        "mocha": "^6.0.2",
+        "nodemon": "^1.18.10"
+    },
+    "dependencies": {
+        "@hapi/joi": "^15.0.3",
+        "axios": "^0.19.0",
+        "bcrypt": "^3.0.6",
+        "bignumber.js": "^9.0.0",
+        "bluebird": "^3.5.4",
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "cron": "1.7.1",
+        "errorhandler": "^1.5.1",
+        "express": "^4.17.0",
+        "express-validator": "^5.3.1",
+        "form-data": "^2.5.1",
+        "handlebars": "^4.1.2",
+        "http-status": "^1.3.2",
+        "jsonwebtoken": "^8.5.1",
+        "lodash": "^4.17.11",
+        "mariadb": "^2.0.5",
+        "moment": "^2.24.0",
+        "multer": "^1.4.1",
+        "mysql2": "^1.7.0",
+        "nodemailer": "^6.3.0",
+        "nodemailer-smtp-transport": "^2.7.4",
+        "npm": "^6.11.1",
+        "prompt": "^1.0.0",
+        "recaptcha-v2": "^0.1.3",
+        "sequelize": "^5.8.6",
+        "sequelize-cli": "^5.4.0",
+        "uuid": "^3.3.2",
+        "winston": "^3.2.1",
+        "xlsx": "0.14.4"
+    }
+}
