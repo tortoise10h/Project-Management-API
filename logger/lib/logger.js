@@ -1,5 +1,5 @@
-const { createLogger, transports, format } = require('winston');
-const moment = require('moment');
+const { createLogger, transports, format } = require('winston')
+const moment = require('moment')
 
 class Logger {
   /**
@@ -13,8 +13,8 @@ class Logger {
      *  fileName: Logger file name
      *  fileMaxSize: Define maximum storage for a log file. It will rotate after maximum log exceeds
      */
-  constructor(config) {
-    const transportOptions = [];
+  constructor (config) {
+    const transportOptions = []
 
     /** Add console transports if CONSOLE LOG ENABLE */
     if (config.consoleEnable) {
@@ -22,14 +22,14 @@ class Logger {
         level: config.consoleLevel,
         format: format.combine(
           format.printf((info) => {
-            info.level = `[${moment.utc().format('YYYY/MM/DD hh:mm:ss.SSS')}] ${info.level}`;
-            return info;
+            info.level = `[${moment.utc().format('YYYY/MM/DD hh:mm:ss.SSS')}] ${info.level}`
+            return info
           }),
           format.colorize(),
-          format.simple(),
-        ),
-      });
-      transportOptions.push(consoleTransport);
+          format.simple()
+        )
+      })
+      transportOptions.push(consoleTransport)
     }
 
     /** Add file transports if FILE LOG ENABLE */
@@ -40,23 +40,23 @@ class Logger {
         maxsize: config.fileMaxSize,
         format: format.combine(
           format.timestamp(),
-          format.json(),
-        ),
-      });
-      transportOptions.push(fileTransport);
+          format.json()
+        )
+      })
+      transportOptions.push(fileTransport)
     }
     this.logger = createLogger({
-      transports: transportOptions,
-    });
-    this.loggerLevels = ['error', 'warn', 'info', 'debug', 'verbose', 'silly'];
+      transports: transportOptions
+    })
+    this.loggerLevels = ['error', 'warn', 'info', 'debug', 'verbose', 'silly']
     this.loggerLevels.forEach((level) => {
-      this[level] = (message, meta) => this.log(message, meta, level);
-    });
+      this[level] = (message, meta) => this.log(message, meta, level)
+    })
   }
 
-  log(message, meta, level) {
-    this.logger[level](message, meta);
+  log (message, meta, level) {
+    this.logger[level](message, meta)
   }
 }
 
-module.exports = Logger;
+module.exports = Logger

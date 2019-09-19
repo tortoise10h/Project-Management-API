@@ -1,4 +1,4 @@
-const Sequelize = require('sequelize');
+const Sequelize = require('sequelize')
 
 // const { Op } = Sequelize;
 
@@ -40,10 +40,10 @@ const Sequelize = require('sequelize');
 // };
 
 class Database {
-  constructor(config, loggingFunction) {
-    this.database = config.database;
-    this.username = config.username;
-    this.password = config.password;
+  constructor (config, loggingFunction) {
+    this.database = config.database
+    this.username = config.username
+    this.password = config.password
     this.options = {
       host: config.host,
       port: config.port,
@@ -51,48 +51,48 @@ class Database {
         max: 5,
         min: 0,
         acquire: 30000,
-        idle: 10000,
+        idle: 10000
       },
       dialect: 'mariadb',
       define: {
         timestamps: true,
-        freezeTableName: true,
+        freezeTableName: true
       },
       dialectOptions: {
         useUTC: false,
-        timezone: config.timezone,
+        timezone: config.timezone
       },
       benchmark: false,
-      logging: config.loggerEnable ? msg => loggingFunction(msg) : false,
+      logging: config.loggerEnable ? msg => loggingFunction(msg) : false
       // operatorsAliases,
-    };
-    this.url = `${this.options.dialect}://${config.host}:${config.port}/${config.database}`;
+    }
+    this.url = `${this.options.dialect}://${config.host}:${config.port}/${config.database}`
   }
 
-  async connect() {
+  async connect () {
     try {
-      this.sequelize = new Sequelize(this.database, this.username, this.password, this.options);
-      await this.sequelize.authenticate();
-      logger.info(`[Database] MariaDB connected, url => ${this.url}`);
+      this.sequelize = new Sequelize(this.database, this.username, this.password, this.options)
+      await this.sequelize.authenticate()
+      logger.info(`[Database] MariaDB connected, url => ${this.url}`)
     } catch (error) {
-      logger.error(`[Database] MariaDB connect error, url => ${this.url}`);
-      throw error;
+      logger.error(`[Database] MariaDB connect error, url => ${this.url}`)
+      throw error
     }
   }
 
-  getConnection() {
-    return this.sequelize;
+  getConnection () {
+    return this.sequelize
   }
 
-  async sync() {
-    await this.sequelize.sync();
-    logger.info('[Database] Created not exists table schema');
+  async sync () {
+    await this.sequelize.sync()
+    logger.info('[Database] Created not exists table schema')
   }
 
-  async close() {
-    await this.sequelize.close();
-    logger.warn(`[Database] MariaDB disconnected, url => ${this.url}`);
+  async close () {
+    await this.sequelize.close()
+    logger.warn(`[Database] MariaDB disconnected, url => ${this.url}`)
   }
 }
 
-module.exports = Database;
+module.exports = Database
