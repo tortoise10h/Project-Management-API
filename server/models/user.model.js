@@ -37,6 +37,10 @@ const schema = {
     type: Sequelize.TEXT,
     allowNull: true
   },
+  confirm: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false
+  },
   is_active: {
     type: Sequelize.BOOLEAN,
     defaultValue: true

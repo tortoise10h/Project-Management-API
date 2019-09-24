@@ -13,7 +13,7 @@ class AuthController {
   async signup (req, res, next) {
     try {
       const schema = Joi.object().keys({
-        fullname: Joi.string().required().max(255),
+        name: Joi.string().required().max(255),
         phone: Joi.string().required().max(40),
         email: Joi.string().required().email({ minDomainSegments: 2 }),
         password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60)
@@ -30,8 +30,8 @@ class AuthController {
                 allowOnly: 'Passwords do not match'
               }
             }
-          })
-
+          }),
+        summary: Joi.string().optional()
       })
 
       /** Validate input */
@@ -39,29 +39,28 @@ class AuthController {
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
       const {
-        email, password, fullname, phone
+        email, name, phone
       } = validater.value
       const User = modelFactory.getModel(constant.DB_MODEL.USER)
 
       /** Validate duplicate */
       const errors = await checkFieldsDuplicate(User, { email, phone })
+      const newUserInfo = { ...validater.value }
+      delete newUserInfo.summary
       if (errors.length > 0) return next(new APIError(errors, httpStatus.BAD_REQUEST))
 
-      /** Create user for customer */
-      const user = await User.create({
-        fullname,
-        phone,
-        password,
-        email
-      })
+      /** Create new user */
+      const user = await User.create({ ...newUserInfo })
 
+      /** Create token to confirm account */
       const token = jwt.sign({
-        fullname,
+        name,
         id: user.id,
         email,
         phone
       }, constant.JWT_SECRET)
 
+      /** Send mail to user to accounce create account success and confirm this account */
       await sendMail(
         'signup',
         {
@@ -70,7 +69,7 @@ class AuthController {
         },
         {
           to: email,
-          subject: '[BP] Register email confirmation'
+          subject: '[Banana Boys] Confirm register account'
         }
       )
 
@@ -92,7 +91,7 @@ class AuthController {
       const { email, token } = req.body
 
       const {
-        User, Log, Customer, Student
+        User
       } = modelFactory.getAllModels()
 
       const user = await User.findOne({
@@ -101,11 +100,13 @@ class AuthController {
         }
       })
 
+      /** Check valid user before confirm */
       if (!user) return next(new APIError('User not exist', httpStatus.NOT_FOUND))
       if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.BAD_REQUEST))
       if (!user.is_active) return next(new APIError('User is banned', httpStatus.BAD_REQUEST))
       if (user.confirmed) return next(new APIError('User has already verifed', httpStatus.BAD_REQUEST))
 
+      /** Verify token and update confirm status of that user if confirm success */
       jwt.verify(token, constant.JWT_SECRET)
       await User.update({
         confirmed: true
@@ -113,30 +114,6 @@ class AuthController {
         where: {
           id: user.id
         }
-      })
-
-      await Customer.update({
-        is_active: true
-      },
-      {
-        where: {
-          userid: user.id
-        }
-      })
-      await Student.update({
-        is_active: true
-      },
-      {
-        where: {
-          userid: user.id
-        }
-      })
-
-      const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-      await Log.create({
-        userid: user.id,
-        ip,
-        action: constant.USER_ACTION.CONFIRM_EMAIL
       })
 
       return apiResponse.success(res, { success: true })
@@ -149,68 +126,42 @@ class AuthController {
     try {
       /** Validate input */
       const schema = Joi.object().keys({
-        username: Joi.string().optional().max(255),
         email: Joi.string().optional().email({ minDomainSegments: 2 }),
         password: Joi.string().required().max(255)
       })
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
-      if (process.env.NODE_ENV === 'production') {
-        const capchaData = {
-          remoteip: req.connection.remoteAddress,
-          response: req.body.recaptcha
-        }
-
-        const verifyResult = await verifyRecaptcha(capchaData)
-        if (!verifyResult) {
-          return next(new APIError([{
-            field: 'recaptcha',
-            code: 'RECAPTCHA_NOT_VALID',
-            message: 'Recaptcha not found.'
-          }], httpStatus.BAD_REQUEST))
-        }
-      }
 
       const { username, email, password } = req.body
       if (!(username || email)) return next(new APIError('Missing username or email', httpStatus.UNAUTHORIZED))
 
       /** Validate exist */
       const conditions = username ? { where: { username } } : { where: { email } }
-      const {
-        User, Log, Student, Customer, Teacher
-      } = modelFactory.getAllModels()
+      const User = modelFactory.getModel(constant.DB_MODEL.USER)
 
       const user = await User.findOne({
-        ...conditions,
-        include: [Student, Teacher, Customer]
+        ...conditions
       })
 
+      /** Validate valid user */
       if (!user) return next(new APIError('User not found', httpStatus.NOT_FOUND))
       if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.BAD_REQUEST))
       if (!user.is_active) return next(new APIError('User is banned', httpStatus.BAD_REQUEST))
-      if (!user.confirmed) return next(new APIError('User is not verifed', httpStatus.BAD_REQUEST))
+      if (!user.confirmed) return next(new APIError('User is not verified', httpStatus.BAD_REQUEST))
+
+      /** Check input password and password in database */
       const match = await bcrypt.compare(password, user.password)
       if (!match) return next(new APIError('Invalid credentials', httpStatus.UNAUTHORIZED))
+
       /** Generate token */
       const exp = moment.utc().unix() + constant.JWT_EXPIRE_TIME
       const token = jwt.sign({
-        username,
+        name: user.name,
         id: user.id,
         email,
-        role: user.role,
         exp
       }, constant.JWT_SECRET)
 
-      const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-      await Log.create({
-        userid: user.id,
-        ip,
-        action: constant.USER_ACTION.LOGIN
-      })
-      await User.update({
-        lastlogin: new Date(),
-        lastip: ip
-      }, { where: { id: user.id } })
       /** Return */
       return apiResponse.success(res, { user, token, exp })
     } catch (error) {
@@ -290,7 +241,7 @@ class AuthController {
       /** Validate user status */
       const User = modelFactory.getModel(constant.DB_MODEL.USER)
       const user = await User.findByPk(decoded.id)
-      
+
       if (!user.is_active) return next(new APIError('User is banned', httpStatus.UNAUTHORIZED))
       if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.UNAUTHORIZED))
 

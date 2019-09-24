@@ -1,7 +1,9 @@
 class Config {
   constructor () {
     this.global = {
-      env: process.env.NODE_DEV ? process.env.NODE_DEV.trim() : 'development'
+      env: process.env.NODE_ENV ? process.env.NODE_ENV.trim() : 'development',
+      passwordAdmin: process.env.PASSWORD_ADMIN ? process.env.PASSWORD_ADMIN.trim() : '12345678',
+      frontendPageUrl: process.env.FRONTEND_PAGE_URL ? process.env.FRONTEND_PAGE_URL.trim() : 'http://localhost:5002'
     }
   }
 
