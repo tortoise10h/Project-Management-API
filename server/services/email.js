@@ -50,16 +50,30 @@ const style = `
 `
 
 const TEMPLATE = {
+  signup: `
+    ${style}
+    <h2>Welcome to project management application of <strong>Banana boys</strong></h2>
+    <br />
+    <a class="button" style="vertical-align:middle" href="${frontendPageUrl}/verify?token={{token}}&email={{email}}">Confirm this email</a>
+    <br />
+    <p>Have a nice day!</p>
+    <br />
+  `
 }
 
 const transporter = nodemailer.createTransport({
-  host: 'Gmail',
+  service: 'Gmail',
   port: 25,
+  secure: false,
   auth: {
-    user: emailBanana.address,
-    pass: emailBanana.password
+    user: 'bananaboys249@gmail.com',
+    pass: 'bananaboys@'
+    // user: emailBanana.address,
+    // pass: emailBanana.password
   },
-  tls: true
+  tls: {
+    rejectUnauthorized: false
+  }
 })
 
 function sendMail (type, data = {}, mailOptions = {}) {

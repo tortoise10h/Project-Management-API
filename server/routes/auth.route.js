@@ -18,9 +18,11 @@ router.route('/signup')
 /** POST /api/auth/confirm - Confirm email to change user to logined */
 router.route('/confirm')
   .post(authController.confirm)
+
 /** POST /api/auth/forgot-password - send email to forgot password */
 router.route('/forgot-password')
   .post(authController.forgotPassword)
+
 /** POST /api/auth/change-password - send email to forgot password */
 router.route('/change-password')
   .post(authController.changePassword)
