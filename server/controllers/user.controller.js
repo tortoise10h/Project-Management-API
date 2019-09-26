@@ -1,10 +1,8 @@
 const httpStatus = require('http-status')
 const Joi = require('@hapi/joi')
 const _ = require('lodash')
-const { Op } = require('sequelize')
 const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
-const { queryParser } = require('../lib')
 const modelFactory = require('../models')
 const checkDuplicateFields = require('../lib/check-fields-duplicate')
 
@@ -115,7 +113,7 @@ class UserController {
 
   async updateUser (req, res, next) {
     try {
-      const { author, user } = req
+      const { user } = req
 
       /** Validate input */
       const schema = Joi.object().keys({
@@ -134,7 +132,6 @@ class UserController {
         email, phone
       } = validater.value
 
-      const errors = []
       const {
         User
       } = modelFactory.getAllModels()
