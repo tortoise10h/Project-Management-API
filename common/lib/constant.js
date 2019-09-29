@@ -22,6 +22,12 @@ const constant = {
     APPROVE_ENQUIRY: 'ApproveEnquiry',
     DESCLINE_ENQUIRY: 'DesclineEnquiry'
   },
+  TODO_STATUS: {
+    NEW: 'New',
+    PROCESSING: 'Processing',
+    DONE: 'Done',
+    CANCEL: 'Cancel'
+  },
   USER_ROLE: {
     ADMIN: 'Admin',
     LEADER: 'Leader',
@@ -31,7 +37,17 @@ const constant = {
   JWT_EXPIRE_TIME: 60 * 60,
   DB_MODEL: {
     USER: 'User',
-    PROJECT: 'Project'
+    PROJECT: 'Project',
+    USER_PROJECT: 'UserProject',
+    TASK: 'Task',
+    USER_TASK: 'UserTask',
+    COLUMN: 'Column',
+    LABEL: 'Label',
+    TASK_LABEL: 'TaskLabel',
+    LOG: 'Log',
+    USER_LOG: 'UserLog',
+    MEDIA: 'Media',
+    TODO: 'Todo'
   },
   UNNECESSARY_FIELDS: [
     'createdAt',

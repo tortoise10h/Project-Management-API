@@ -4,7 +4,7 @@ const exitProcess = () => {
   }, 100)
 }
 
-require('dotenv').config({});
+require('dotenv').config({})
 global.Promise = require('bluebird')
 const { config, util } = require('./common')
 const Logger = require('./logger')
