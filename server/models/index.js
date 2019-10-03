@@ -114,6 +114,36 @@ class ModelFactory {
     })
 
     await User.findOrCreate({
+      where: { email: 'hoailinhkt2015@gmail.com' },
+      defaults: {
+        password: '12345678',
+        confirm: true,
+        name: 'Lường Tú Linh',
+        phone: '03437097276'
+      }
+    })
+
+    await User.findOrCreate({
+      where: { email: 'minhminion2015@gmail.com' },
+      defaults: {
+        password: '12345678',
+        confirm: true,
+        name: 'Lưu Bảo Minh',
+        phone: '03978227276'
+      }
+    })
+
+    await User.findOrCreate({
+      where: { email: 'nahntvt@gmail.com' },
+      defaults: {
+        password: '12345678',
+        confirm: true,
+        name: 'Nguyễn Anh Khoa',
+        phone: '03970972326'
+      }
+    })
+
+    await User.findOrCreate({
       where: { email: 'guest@gmail.com' },
       defaults: {
         password: '12345678',
