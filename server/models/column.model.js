@@ -36,6 +36,10 @@ const schema = {
   },
   deletedAt: {
     type: Sequelize.DATE
+  },
+  project_id: {
+    type: Sequelize.BIGINT(20),
+    allowNull: false
   }
 }
 

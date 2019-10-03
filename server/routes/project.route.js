@@ -16,10 +16,11 @@ router.route('/:projectId')
 router.param('projectId', projectController.loadProject)
 
 /** POST api/project/label - add label */
-router.route('/label')
+router.route('/:projectId/label')
   .post(authorController.validate, labelController.addLabel)
 
 /** POST api/project/column - add column */
-router.route('/column')
+router.route('/:projectId/column')
   .post(authorController.validate, columnController.addColumn)
+
 module.exports = router
