@@ -31,7 +31,7 @@ const constant = {
   USER_ROLE: {
     ADMIN: 'Admin',
     LEADER: 'Leader',
-    MEMEBER: 'Member'
+    MEMBER: 'Member'
   },
   JWT_SECRET: '$banana-project-management-api-jwt-secret$',
   JWT_EXPIRE_TIME: 60 * 60,

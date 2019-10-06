@@ -2,7 +2,7 @@ const multer = require('multer')
 const moment = require('moment')
 const { config, util } = require('../../common')
 
-const baseLocation = `${config.getServerConfig().uploadLocation}/mim_${config.global.env}`
+const baseLocation = `${config.getServerConfig().uploadLocation}/project_management_${config.global.env}`
 const upload = {}
 
 /** Filter list */
@@ -82,9 +82,9 @@ const filter = {
   }
 }
 
-/** Student avatar */
-upload.studentPhoto = (req, res, next) => {
-  const location = `${baseLocation}/student/photo`
+/** User avatar */
+upload.userAvatar = (req, res, next) => {
+  const location = `${baseLocation}/user/avatar`
   util.createFolder(location)
   const storage = multer.diskStorage({
     destination: (_req, _file, _cb) => {
@@ -94,8 +94,8 @@ upload.studentPhoto = (req, res, next) => {
       _cb(null, `${moment.utc().format('YYYYMMDDhhmmss')}_${_file.originalname}`)
     }
   })
-  const studentPhotoUpload = multer({ storage, fileFilter: filter.image }).single('photo')
-  studentPhotoUpload(req, res, (error) => {
+  const userAvatarUpload = multer({ storage, fileFilter: filter.image }).single('avatar')
+  userAvatarUpload(req, res, (error) => {
     if (error instanceof multer.MulterError) return next(error)
     if (error) return next(error)
     return next()

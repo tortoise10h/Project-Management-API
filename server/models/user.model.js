@@ -76,9 +76,20 @@ class UserModel extends IModel {
 
     /** Hash password before update to database */
     this.model.addHook('beforeUpdate', async (user) => {
-      user.password = await bcrypt.hash(user.password, constant.PASSWORD_HASH_SALT_ROUNDS)
-      if (user.is_active === false) user.inactivedAt = moment.utc()
-      if (user.is_deleted === true) user.deletedAt = moment.utc()
+      /** If password was changed => hash and save */
+      if (user.dataValues.password !== user._previousDataValues.password) {
+        user.password = await bcrypt.hash(user.password, constant.PASSWORD_HASH_SALT_ROUNDS)
+      }
+
+      /** Update time when is_active was changed */
+      if (user.dataValues.is_active !== user._previousDataValues.is_active) {
+        if (user.is_active === false) user.inactivedAt = moment.utc()
+      }
+
+      /** Update time when use was deleted */
+      if (user.dataValues.is_deleted !== user._previousDataValues.is_deleted) {
+        if (user.is_deleted === true) user.deletedAt = moment.utc()
+      }
     })
   }
 }
