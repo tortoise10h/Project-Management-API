@@ -234,7 +234,8 @@ class AuthController {
       let decoded
       try {
         decoded = jwt.verify(token, constant.JWT_SECRET)
-      } catch (err) {token = token.slice(7, token.length)
+      } catch (err) {
+        token = token.slice(7, token.length)
         logger.error(`[Server] Authentication::refresh::verify: ${err.message}`)
         return next(new APIError('Token validation error', httpStatus.UNAUTHORIZED))
       }
