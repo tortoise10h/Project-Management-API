@@ -4,6 +4,7 @@ const _ = require('lodash')
 const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
+const { Op } = require('sequelize')
 
 class ColumnController {
   async addColumn (req, res, next) {
@@ -67,6 +68,68 @@ class ColumnController {
 
       /** Return new column update info */
       return apiResponse.success(res, updatedColumn)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async listColumn (req, res, next) {
+    try {
+      const schema = Joi.object().keys({
+        title: Joi.string().optional().max(255),
+        description: Joi.string().optional(),
+        created_by: Joi.number().optional(),
+        is_active: Joi.boolean().optional(),
+        project_id: Joi.number().optional(),
+        sort: Joi.string().optional().default('title'),
+        direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC']).default('ASC'),
+        page: Joi.number().optional().min(1).default(1),
+        offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET).default(constant.SERVER.API_DEFAULT_OFFSET)
+      })
+
+      /** Validate input */
+      const validater = Joi.validate(req.query, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const {
+        sort, direction, page, offset
+      } = validater.value
+
+      /** Map search */
+      const filter = {}
+      Object.keys(validater.value).forEach((key) => {
+        if (!['sort', 'direction', 'page', 'offset'].includes(key)) {
+          switch (typeof validater.value[key]) {
+            case 'string':
+              filter[key] = { [Op.like]: `%${validater.value[key]}%` }
+              break
+            case 'boolean':
+            case 'number':
+              filter[key] = validater.value[key]
+              break
+            default:
+              break
+          }
+        }
+      })
+
+      const { project } = req
+      /** Get list of label */
+      const queryOffset = (page - 1) * offset
+      const queryLimit = offset
+      const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
+      const columns = await Column.findAndCountAll({
+        where: {
+          ...filter, is_deleted: false, project_id: project.id
+        },
+        order: [[sort, direction]],
+        attributes: {
+          exclude: constant.UNNECESSARY_FIELDS
+        },
+        offset: queryOffset,
+        limit: queryLimit
+      })
+
+      return apiResponse.success(res, util.paginate(columns, page, offset))
     } catch (error) {
       return next(error)
     }
