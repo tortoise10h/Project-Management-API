@@ -10,6 +10,10 @@ const schema = {
     primaryKey: true,
     autoIncrement: true
   },
+  index: {
+    type: Sequelize.INTEGER,
+    allowNull: true
+  },
   title: {
     type: Sequelize.STRING(255),
     allowNull: false
@@ -57,13 +61,27 @@ class TaskModel extends IModel {
 
   async init () {
     this.model = this.sequelize.define(this.modelName, this.schema, this.options)
+    await super.init()
 
     /** Sync model to database */
     await this.model.sync()
 
+    /** Before update task */
     this.model.addHook('beforeUpdate', async (task) => {
       if (task.is_active === false) task.inactivedAt = moment.utc()
       if (task.is_deleted === true) task.deletedAt = moment.utc()
+    })
+    /** Before create task, generate task index */
+    this.model.addHook('beforeCreate', async (task) => {
+      const [last] = await this.model.findAll({
+        where: { column_id: task.column_id },
+        order: [['index', 'desc']],
+        limit: 1
+      })
+      let index = 0
+      if (last) index = last.index
+      task.index = ++index
+      return task
     })
   }
 }

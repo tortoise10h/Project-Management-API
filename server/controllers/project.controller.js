@@ -6,6 +6,16 @@ const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
 
+const compareTaskIndex = (a, b) => {
+  if (a.index > b.index) {
+    return 1
+  }
+  if (a.index < b.index) {
+    return -1
+  }
+  return 0
+}
+
 class ProjectController {
   async addProject (req, res, next) {
     try {
@@ -177,6 +187,42 @@ class ProjectController {
       })
 
       return apiResponse.success(res, util.paginate(projects, page, offset))
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async listKanbanInfo (req, res, next) {
+    try {
+      /** Get list of tasks */
+      const { Column, Task } = modelFactory.getAllModels()
+      const { project } = req
+
+      let result = await Column.findAll({
+        where: {
+          is_deleted: false,
+          project_id: project.id
+        },
+        attributes: {
+          exclude: constant.UNNECESSARY_FIELDS
+        },
+        include: [
+          {
+            model: Task,
+            attributes: {
+              exclude: constant.UNNECESSARY_FIELDS
+            }
+          }
+        ],
+        order: [['createdAt', 'asc']]
+      })
+
+      /** Sort tasks in each column by index ascending */
+      result = result.map((column) => {
+        column.Tasks = column.Tasks.sort(compareTaskIndex)
+        return column
+      })
+      return apiResponse.success(res, result)
     } catch (error) {
       return next(error)
     }

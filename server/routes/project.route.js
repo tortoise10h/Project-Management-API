@@ -50,4 +50,8 @@ router.route('/:projectId/column')
 /** GET api/project/label - list all label in system, can filter */
   .get(authorController.validate, columnController.listColumn)
 
+router.route('/:projectId/kanban')
+  /** GET api/project/:projectId/kanban */
+  .get(authorController.validate, projectController.listKanbanInfo)
+
 module.exports = router
