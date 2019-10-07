@@ -18,6 +18,10 @@ const schema = {
     type: Sequelize.BIGINT(20),
     allowNull: false
   },
+  added_by: {
+    type: Sequelize.BIGINT(20),
+    allowNull: false
+  },
   is_active: {
     type: Sequelize.BOOLEAN,
     defaultValue: true
