@@ -126,6 +126,7 @@ class AuthController {
   async login (req, res, next) {
     try {
       /** Validate input */
+      console.log('======== Bao Minh debug :>: AuthController -> login -> req.body', req.body)
       const schema = Joi.object().keys({
         email: Joi.string().optional().email({ minDomainSegments: 2 }),
         password: Joi.string().required().max(255)
@@ -133,11 +134,11 @@ class AuthController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      const { username, email, password } = req.body
-      if (!(username || email)) return next(new APIError('Missing username or email', httpStatus.UNAUTHORIZED))
+      const { email, password } = req.body
+      if (!(email)) return next(new APIError('Missing username or email', httpStatus.UNAUTHORIZED))
 
       /** Validate exist */
-      const conditions = username ? { where: { username } } : { where: { email } }
+      const conditions = { where: { email } }
       const User = modelFactory.getModel(constant.DB_MODEL.USER)
 
       const user = await User.findOne({

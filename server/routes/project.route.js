@@ -12,6 +12,9 @@ router.route('/')
   /** POST api/project - add project */
   .post(authorController.validate, projectController.addProject)
 
+  /** GET api/project - list all project in system, can filter */
+  .get(authorController.validate, projectController.listProject)
+
 router.route('/:projectId')
   /** PUT api/project/:projectId - update project */
   .put(authorController.validate, projectController.updateProject)
