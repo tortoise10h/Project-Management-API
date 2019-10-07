@@ -28,6 +28,12 @@ const constant = {
     DONE: 'Done',
     CANCEL: 'Cancel'
   },
+  PROJECT_STATUS: {
+    NEW: 'New',
+    PROCESSING: 'Processing',
+    DONE: 'Done',
+    CANCEL: 'Cancel'
+  },
   USER_ROLE: {
     ADMIN: 'Admin',
     LEADER: 'Leader',
