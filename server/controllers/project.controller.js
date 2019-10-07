@@ -97,6 +97,8 @@ class ProjectController {
         sort, direction, page, offset
       } = validater.value
 
+      const { author } = req
+
       /** Map search */
       const filter = {}
       Object.keys(validater.value).forEach((key) => {
@@ -121,7 +123,7 @@ class ProjectController {
       const { Project, User } = modelFactory.getAllModels()
       const projects = await Project.findAndCountAll({
         where: {
-          ...filter, is_deleted: false
+          ...filter, is_deleted: false, owner: author.id
         },
         order: [[sort, direction]],
         attributes: {
