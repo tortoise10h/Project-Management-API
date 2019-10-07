@@ -79,12 +79,12 @@ class ProjectController {
     try {
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        description: Joi.string().optional().max(255),
+        description: Joi.string().optional(),
         start_date: Joi.date().optional(),
         end_date: Joi.date().optional(),
         status: Joi.string().optional().max(255),
         is_active: Joi.boolean().optional(),
-        owner: Joi.string().optional(),
+        owner: Joi.number().optional(),
         sort: Joi.string().optional().default('title'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC']).default('ASC'),
         page: Joi.number().optional().min(1).default(1),

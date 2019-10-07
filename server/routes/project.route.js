@@ -38,9 +38,13 @@ router.param('userProjectId', userController.loadUserProject)
 /** POST api/project/label - add label */
 router.route('/:projectId/label')
   .post(authorController.validate, labelController.addLabel)
+/** GET api/project/label - list all label in system, can filter */
+  .get(authorController.validate, labelController.listLabel)
 
 /** POST api/project/column - add column */
 router.route('/:projectId/column')
   .post(authorController.validate, columnController.addColumn)
+/** GET api/project/label - list all label in system, can filter */
+  .get(authorController.validate, columnController.listColumn)
 
 module.exports = router
