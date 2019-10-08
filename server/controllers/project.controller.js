@@ -129,11 +129,12 @@ class ProjectController {
       /** Get list of project */
       const queryOffset = (page - 1) * offset
       const queryLimit = offset
-      const { Project, User } = modelFactory.getAllModels()
+      const { Project, User, UserProject } = modelFactory.getAllModels()
       const projects = await Project.findAndCountAll({
         where: {
-          ...filter, is_deleted: false, owner: author.id
+          ...filter, is_deleted: false
         },
+        distinct: true,
         order: [[sort, direction]],
         attributes: {
           exclude: constant.UNNECESSARY_FIELDS
@@ -144,6 +145,11 @@ class ProjectController {
             attributes: {
               exclude: [...constant.UNNECESSARY_FIELDS, 'password']
             }
+          },
+          {
+            model: UserProject,
+            require: true,
+            where: { user_id: author.id }
           }
         ],
         offset: queryOffset,
@@ -152,10 +158,13 @@ class ProjectController {
 
       projects.rows = projects.rows.map((project) => {
         project = project.toJSON()
+        /** Remove user project field */
         project.Users = project.Users.map((user) => {
           delete user.UserProject
           return user
         })
+        project.user_role = project.UserProjects[0].role
+        delete project.UserProjects
         return project
       })
 
