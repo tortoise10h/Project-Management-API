@@ -20,14 +20,23 @@ class ProjectController {
       /** Validate Input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
-      const Project = modelFactory.getModel(constant.DB_MODEL.PROJECT)
+      const { Project, UserProject } = modelFactory.getAllModels()
 
       /** Validate Duplicate */
       const newProjectInfo = { ...validater.value }
       newProjectInfo.owner = author.id
 
+      const sequelize = modelFactory.getConnection()
       /** Create new project */
-      const newProject = await Project.create({ ...newProjectInfo })
+      const newProject = await sequelize.transaction(async (t) => {
+        const result = await Project.create({ ...newProjectInfo }, { transaction: t })
+        await UserProject.create({
+          user_id: author.id,
+          project_id: result.id,
+          role: constant.USER_ROLE.ADMIN
+        }, { transaction: t })
+        return result
+      })
       return apiResponse.success(res, newProject)
     } catch (error) {
       return next(error)
