@@ -129,10 +129,10 @@ class ProjectController {
       /** Get list of project */
       const queryOffset = (page - 1) * offset
       const queryLimit = offset
-      const { Project, User } = modelFactory.getAllModels()
+      const { Project, User, UserProject } = modelFactory.getAllModels()
       const projects = await Project.findAndCountAll({
         where: {
-          ...filter, is_deleted: false, owner: author.id
+          ...filter, is_deleted: false
         },
         order: [[sort, direction]],
         attributes: {
@@ -144,6 +144,11 @@ class ProjectController {
             attributes: {
               exclude: [...constant.UNNECESSARY_FIELDS, 'password']
             }
+          },
+          {
+            model: UserProject,
+            where: { user_id: author.id },
+            require: true
           }
         ],
         offset: queryOffset,

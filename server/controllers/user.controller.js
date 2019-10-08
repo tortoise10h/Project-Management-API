@@ -268,7 +268,7 @@ class UserController {
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
-      const { user_id } = validater.value
+      const { user_id: userId } = validater.value
       const { project, author } = req
       const { User, UserProject } = modelFactory.getAllModels()
 
@@ -277,13 +277,20 @@ class UserController {
         return next(new APIError('You don\'t have a permission', httpStatus.UNAUTHORIZED))
       }
 
-      const errors = await checkDuplicateFields(UserProject, { user_id })
+      const oldUserProject = await UserProject.findOne({
+        where: {
+          user_id: userId,
+          project_id: project.id
+        }
+      })
+      const errors = []
+      if (oldUserProject) errors.push({ field: 'userId', value: userId, message: 'Duplicate user in project' })
       if (errors.length > 0) {
         return next(new APIError(errors, httpStatus.BAD_REQUEST))
       }
 
       /** Validate valid user */
-      const user = await User.findByPk(user_id)
+      const user = await User.findByPk(userId)
       if (!user || user.is_deleted || !user.is_active) {
         return next(new APIError('User is not valid', httpStatus.BAD_REQUEST))
       }
@@ -294,12 +301,12 @@ class UserController {
 
       /** Add user to project */
       await UserProject.create({
-        user_id,
+        user_id: userId,
         project_id: project.id,
         role: constant.USER_ROLE.MEMBER
       })
 
-      return apiResponse.success(res, `Add user with id ${user_id} to project successfully`)
+      return apiResponse.success(res, `Add user with id ${userId} to project successfully`)
     } catch (error) {
       return next(error)
     }
