@@ -134,6 +134,7 @@ class ProjectController {
         where: {
           ...filter, is_deleted: false
         },
+        distinct: true,
         order: [[sort, direction]],
         attributes: {
           exclude: constant.UNNECESSARY_FIELDS
@@ -147,8 +148,8 @@ class ProjectController {
           },
           {
             model: UserProject,
-            where: { user_id: author.id },
-            require: true
+            require: true,
+            where: { user_id: author.id }
           }
         ],
         offset: queryOffset,
@@ -157,10 +158,13 @@ class ProjectController {
 
       projects.rows = projects.rows.map((project) => {
         project = project.toJSON()
+        /** Remove user project field */
         project.Users = project.Users.map((user) => {
           delete user.UserProject
           return user
         })
+        project.user_role = project.UserProjects[0].role
+        delete project.UserProjects
         return project
       })
 
