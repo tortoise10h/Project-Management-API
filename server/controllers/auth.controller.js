@@ -126,7 +126,6 @@ class AuthController {
   async login (req, res, next) {
     try {
       /** Validate input */
-      console.log('======== Bao Minh debug :>: AuthController -> login -> req.body', req.body)
       const schema = Joi.object().keys({
         email: Joi.string().optional().email({ minDomainSegments: 2 }),
         password: Joi.string().required().max(255)

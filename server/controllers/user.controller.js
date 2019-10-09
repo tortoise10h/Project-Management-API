@@ -110,15 +110,28 @@ class UserController {
       /** Map search */
       const filter = {}
       Object.keys(validater.value).forEach((key) => {
-        filter[key] = validater.value[key]
+        if (!['sort', 'direction', 'page', 'offset'].includes(key)) {
+          switch (typeof validater.value[key]) {
+            case 'string':
+              filter[key] = { [Op.like]: `%${validater.value[key]}%` }
+              break
+            case 'boolean':
+            case 'number':
+              filter[key] = validater.value[key]
+              break
+            default:
+              break
+          }
+        }
       })
 
+      const { project } = req
       /** Get list of customer */
       const queryOffset = (page - 1) * offset
       const queryLimit = offset
-      const UserProject = modelFactory.getModel(constant.DB_MODEL.UserProject)
+      const UserProject = modelFactory.getModel(constant.DB_MODEL.USER_PROJECT)
       const userProjects = await UserProject.findAndCountAll({
-        where: { ...filter, is_deleted: false },
+        where: { ...filter, is_deleted: false, project_id: project.id },
         order: [[sort, direction]],
         attributes: {
           exclude: [...constant.UNNECESSARY_FIELDS]
@@ -188,7 +201,10 @@ class UserController {
         phone: Joi.string().optional().max(40),
         email: Joi.string().optional().email({ minDomainSegments: 2 }),
         password: Joi.string().optional().min(8).max(60),
-        summary: Joi.string().optional()
+        summary: Joi.string().optional(),
+        address: Joi.string().optional().max(255),
+        profile_title: Joi.string().optional().max(255),
+        birthday: Joi.date().optional()
       })
 
       /** Validate input */
@@ -236,7 +252,7 @@ class UserController {
     try {
       /** Validate input */
       const id = parseInt(userProjectId)
-      if (_.isNaN(id)) return next(new APIError([{ field: 'userProjectId', value: userId, message: 'Invalid user project id' }], httpStatus.BAD_REQUEST))
+      if (_.isNaN(id)) return next(new APIError([{ field: 'userProjectId', value: userProjectId, message: 'Invalid user project id' }], httpStatus.BAD_REQUEST))
 
       /** Validate existed */
       const { UserProject } = modelFactory.getAllModels()
@@ -246,7 +262,6 @@ class UserController {
       /** Load user project to query, pass to next step */
       req.userProject = userProject
       return next()
-
     } catch (error) {
       return next(error)
     }
@@ -296,7 +311,7 @@ class UserController {
       }
 
       if (user.id === project.owner) {
-        return next(new APIError('You are the owner of project now!', httpStatus.BAD_REQUEST))
+        return next(new APIError('You are the owner of project!', httpStatus.BAD_REQUEST))
       }
 
       /** Add user to project */
@@ -307,6 +322,52 @@ class UserController {
       })
 
       return apiResponse.success(res, `Add user with id ${userId} to project successfully`)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async removeUserFromProject (req, res, next) {
+    try {
+      const schema = Joi.object().keys({
+        user_id: Joi.number().min(1).required()
+      })
+      /** Validate input */
+      const validater = Joi.validate(req.body, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const { user_id: userId } = validater.value
+      const { project, author } = req
+      const { User, UserProject } = modelFactory.getAllModels()
+
+      /** Validate project owner */
+      if (project.owner !== author.id) return next(new APIError('You don\'t have a permission', httpStatus.UNAUTHORIZED))
+
+      /** Validate valid user */
+      const user = await User.findByPk(userId)
+      if (!user || user.is_deleted || !user.is_active) {
+        return next(new APIError('User is not valid', httpStatus.BAD_REQUEST))
+      }
+
+      if (user.id === project.owner) {
+        return next(new APIError('You can\'t remove yourself from project', httpStatus.BAD_REQUEST))
+      }
+
+      /** Validate user in project */
+      const oldUserProject = await UserProject.findOne({
+        where: {
+          user_id: userId
+        }
+      })
+      if (!oldUserProject) return next(new APIError({ field: 'userId', value: userId, message: 'User is not in project' }, httpStatus.BAD_REQUEST))
+
+      /** Remove user from project */
+      await UserProject.destroy({
+        where: {
+          user_id: userId,
+          project_id: project.id
+        }
+      })
+      return apiResponse.success(res, 'Remove user successfully')
     } catch (error) {
       return next(error)
     }
