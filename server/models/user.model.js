@@ -24,6 +24,17 @@ const schema = {
     type: Sequelize.STRING(255),
     allowNull: false
   },
+  birthday: {
+    type: Sequelize.DATE
+  },
+  address: {
+    type: Sequelize.STRING(255),
+    allowNull: true
+  },
+  profile_title: {
+    type: Sequelize.STRING(255),
+    allowNull: true
+  },
   photo_location: {
     type: Sequelize.STRING,
     allowNull: true

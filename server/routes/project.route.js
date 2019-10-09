@@ -22,6 +22,9 @@ router.route('/:projectId/user-project')
   /** POST /api/project/:projectId/user-project - Add user to project */
   .post(authorController.validate, userController.addUserToProject)
 
+  /** POST /api/project/:projectId/user-project - Remove user from project */
+  .delete(authorController.validate, userController.removeUserFromProject)
+
   /** GET /api/project/:projectId/user-project - List all user in project, can filter */
   .get(authorController.validate, userController.listUserProject)
 
