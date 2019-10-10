@@ -16,6 +16,9 @@ class UserController {
         name: Joi.string().optional(),
         email: Joi.string().optional(),
         phone: Joi.string().optional(),
+        birthday: Joi.date().optional(),
+        address: Joi.string().optional(),
+        profile_title: Joi.string().optional(),
         sort: Joi.string().optional().default('name'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
           .default('ASC'),
