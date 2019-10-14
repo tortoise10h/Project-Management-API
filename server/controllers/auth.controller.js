@@ -342,18 +342,21 @@ class AuthController {
   async changePassword (req, res, next) {
     try {
       const schema = Joi.object().keys({
-        password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60),
-        prePassword: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60),
+        oldPassword: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60),
+        newPassword: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60),
+        confirmPassword: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60),
         email: Joi.string().required().email({ minDomainSegments: 2 }),
         token: Joi.string().required()
       })
       const {
-        password, prePassword, email, token
+        oldPassword, newPassword, email, token,
+        confirmPassword
       } = req.body
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
-      if (!(password === prePassword)) return next(new APIError('2 password not match'))
-      jwt.verify(token, constant.JWT_SECRET)
+      if (!(newPassword === confirmPassword)) return next(new APIError('New password and confirm new password do not match'))
+      const authorDecoded = jwt.verify(token, constant.JWT_SECRET)
+      if (authorDecoded.email !== email) return next(new APIError('You don\'t have a permission'))
       const User = modelFactory.getModel(constant.DB_MODEL.USER)
       const user = await User.findOne({
         where: {
@@ -363,9 +366,13 @@ class AuthController {
       if (!user) return next(new APIError('User not exist', httpStatus.NOT_FOUND))
       if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.BAD_REQUEST))
 
+      /** Check correct old password */
+      const match = await bcrypt.compare(oldPassword, user.password)
+      if (!match) return next(new APIError('Old password is not correct', httpStatus.BAD_REQUEST))
+
       // if (!user.is_active) return next(new APIError('User is banned', httpStatus.BAD_REQUEST));
-      const newPassword = await bcrypt.hash(password, constant.PASSWORD_HASH_SALT_ROUNDS)
-      await User.update({ password: newPassword }, { where: { email } })
+      const updatedPassword = await bcrypt.hash(newPassword, constant.PASSWORD_HASH_SALT_ROUNDS)
+      await User.update({ password: updatedPassword }, { where: { email } })
       return apiResponse.success(res, { success: true })
     } catch (error) {
       return next(error)
