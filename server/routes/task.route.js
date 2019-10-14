@@ -1,8 +1,6 @@
 const taskController = require('../controllers/task.controller')
 const authorController = require('../controllers/auth.controller')
-const columnController = require('../controllers/column.controller')
-
-const userController = require('../controllers/user.controller')
+const todoController = require('../controllers/todo.controller')
 
 const express = require('express')
 const router = express.Router()
@@ -18,6 +16,12 @@ router.route('/updateIndex')
 router.route('/:taskId')
   /** GET api/task - update task */
   .put(authorController.validate, taskController.updateTask)
+
+router.route('/:taskId/todo')
+  /** POST api/task/:taskId/todo - add todo */
+  .post(authorController.validate, todoController.addTodo)
+  /** GET api/task/:taskId/todo - list all todo in system, can filter */
+  .get(authorController.validate, todoController.listTodo)
 
 router.param('taskId', taskController.loadTask)
 

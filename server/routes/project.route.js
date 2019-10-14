@@ -18,6 +18,9 @@ router.route('/')
 router.route('/:projectId')
   /** PUT api/project/:projectId - update project */
   .put(authorController.validate, projectController.updateProject)
+  /** GET /api/project/:projectId - get project by id */
+  .get(authorController.validate, projectController.getProject)
+
 router.route('/:projectId/user-project')
   /** POST /api/project/:projectId/user-project - Add user to project */
   .post(authorController.validate, userController.addUserToProject)
@@ -38,14 +41,14 @@ router.route('/:projectId/user-project/:userProjectId')
 router.param('projectId', projectController.loadProject)
 router.param('userProjectId', userController.loadUserProject)
 
-/** POST api/project/label - add label */
 router.route('/:projectId/label')
+/** POST api/project/label - add label */
   .post(authorController.validate, labelController.addLabel)
 /** GET api/project/label - list all label in system, can filter */
   .get(authorController.validate, labelController.listLabel)
 
-/** POST api/project/column - add column */
 router.route('/:projectId/column')
+/** POST api/project/column - add column */
   .post(authorController.validate, columnController.addColumn)
 /** GET api/project/label - list all label in system, can filter */
   .get(authorController.validate, columnController.listColumn)

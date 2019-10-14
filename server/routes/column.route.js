@@ -4,9 +4,11 @@ const authorController = require('../controllers/auth.controller')
 const columnController = require('../controllers/column.controller')
 const taskController = require('../controllers/task.controller')
 
-/** PUT api/project/:projectId - update project */
 router.route('/:columnId')
+  /** PUT /api/column/:columnId - update column */
   .put(authorController.validate, columnController.updateColumn)
+  /** GET /api/column/:columnId - get column by id */
+  .get(authorController.validate, columnController.getColumn)
 
 router.route('/:columnId/task')
   /** POST /api/column/:columnId/task - Add new task to column */

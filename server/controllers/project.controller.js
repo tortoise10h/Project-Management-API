@@ -70,6 +70,41 @@ class ProjectController {
     }
   }
 
+  async getProject (req, res, next) {
+    try {
+      const { project } = req
+
+      const { User, Project } = modelFactory.getAllModels()
+      const projects = await Project.findOne({
+        where: {
+          id: project.id,
+          is_deleted: false
+        },
+        attributes: {
+          exclude: constant.UNNECESSARY_FIELDS
+        },
+        include: [{
+          model: User,
+          attributes: {
+            exclude: [...constant.UNNECESSARY_FIELDS, 'password', 'phone']
+          }
+        }]
+      })
+      projects.rows = projects.rows.map((project) => {
+        project = project.toJSON()
+        /** Remove user project field */
+        project.Users = project.Users.map((user) => {
+          delete user.UserProject
+          return user
+        })
+        return project
+      })
+      return apiResponse.success(res, projects)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
   async updateProject (req, res, next) {
     try {
       const { project } = req
