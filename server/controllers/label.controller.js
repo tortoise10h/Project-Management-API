@@ -50,6 +50,14 @@ class LabelController {
     }
   }
 
+  async getLabel (req, res, next) {
+    try {
+      return apiResponse.success(res, req.label)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
   async updateLabel (req, res, next) {
     try {
       const { label } = req

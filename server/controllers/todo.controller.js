@@ -6,101 +6,91 @@ const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
 
-class ColumnController {
-  async addColumn (req, res, next) {
+class TodoController {
+  async addTodo (req, res, next) {
     try {
       const schema = Joi.object().keys({
         title: Joi.string().required().max(255),
         description: Joi.string().optional()
       })
-      const { author, project } = req
+      const { author, task } = req
 
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      const { title } = validater.value
-      const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
-      /** Validate duplicate title in project */
-      const column = await Column.findOne({
-        where: {
-          title: title,
-          project_id: project.id,
-          is_deleted: false
-        }
-      })
+      const Todo = modelFactory.getModel(constant.DB_MODEL.TODO)
+      const newTodoInfo = { ...validater.value }
+      newTodoInfo.created_by = author.id
+      newTodoInfo.task_id = task.id
 
-      if (column) return next(new APIError('Title must be uniqued'), httpStatus.BAD_REQUEST)
-
-      const newColumnInfo = { ...validater.value }
-      newColumnInfo.created_by = author.id
-      newColumnInfo.project_id = project.id
-
-      /** Create new label */
-      const createColumn = await Column.create({ ...newColumnInfo })
-      return apiResponse.success(res, createColumn)
+      /** Create new todo */
+      const todo = await Todo.create({ ...newTodoInfo })
+      return apiResponse.success(res, todo)
     } catch (error) {
       return next(error)
     }
   }
 
-  async loadColumn (req, res, next, columnId) {
+  async loadTodo (req, res, next, todoId) {
     try {
-      /** Validate column id */
-      const id = parseInt(columnId)
-      if (_.isNaN(id)) return next(new APIError([{ field: 'columnId', value: columnId, message: 'Invalid column' }], httpStatus.BAD_REQUEST))
+      /** Validate todo id */
+      const id = parseInt(todoId)
+      if (_.isNaN(id)) return next(new APIError([{ field: 'todoId', value: todoId, message: 'Invalid todo' }], httpStatus.BAD_REQUEST))
 
       /** Validate existed */
-      const { Column } = modelFactory.getAllModels()
-      const column = await Column.findByPk(id)
-      if (!column || column.is_deleted) return next(new APIError('Column not found'), httpStatus.BAD_REQUEST)
+      const { Todo } = modelFactory.getAllModels()
+      const todo = await Todo.findByPk(id)
+      if (!todo || todo.is_deleted) return next(new APIError('Todo not found', httpStatus.BAD_REQUEST))
 
-      req.column = column
+      req.todo = todo
       return next()
     } catch (error) {
       return next(error)
     }
   }
 
-  async getColumn (req, res, next) {
+  async getTodo (req, res, next) {
     try {
-      return apiResponse.success(res, req.column)
+      return apiResponse.success(res, req.todo)
     } catch (error) {
       return next(error)
     }
   }
 
-  async updateColumn (req, res, next) {
+  async updateTodo (req, res, next) {
     try {
-      const { column } = req
+      const { todo } = req
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        description: Joi.string().optional()
+        description: Joi.string().optional(),
+        status: Joi.string().optional().max(255)
       })
 
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      /** Update column info */
-      const updatedColumn = await column.update({ ...validater.value })
+      /** Update todo info */
+      const updatedTodo = await todo.update({ ...validater.value })
 
-      /** Return new column update info */
-      return apiResponse.success(res, updatedColumn)
+      /** Return new todo info */
+      return apiResponse.success(res, updatedTodo)
     } catch (error) {
       return next(error)
     }
   }
 
-  async listColumn (req, res, next) {
+  async listTodo (req, res, next) {
     try {
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
         description: Joi.string().optional(),
+        status: Joi.string().optional().max(255),
+        task_id: Joi.number().optional(),
         created_by: Joi.number().optional(),
         is_active: Joi.boolean().optional(),
-        project_id: Joi.number().optional(),
         sort: Joi.string().optional().default('title'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC']).default('ASC'),
         page: Joi.number().optional().min(1).default(1),
@@ -132,14 +122,14 @@ class ColumnController {
         }
       })
 
-      const { project } = req
-      /** Get list of label */
+      const { task } = req
+      /** Get list of todo */
       const queryOffset = (page - 1) * offset
       const queryLimit = offset
-      const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
-      const columns = await Column.findAndCountAll({
+      const Todo = modelFactory.getModel(constant.DB_MODEL.TODO)
+      const todos = await Todo.findAndCountAll({
         where: {
-          ...filter, is_deleted: false, project_id: project.id
+          ...filter, is_deleted: false, task_id: task.id
         },
         order: [[sort, direction]],
         attributes: {
@@ -149,11 +139,11 @@ class ColumnController {
         limit: queryLimit
       })
 
-      return apiResponse.success(res, util.paginate(columns, page, offset))
+      return apiResponse.success(res, util.paginate(todos, page, offset))
     } catch (error) {
       return next(error)
     }
   }
 }
 
-module.exports = new ColumnController()
+module.exports = new TodoController()

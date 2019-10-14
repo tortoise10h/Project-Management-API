@@ -272,6 +272,17 @@ class UserController {
 
   async getUserProject (req, res, next) {
     try {
+      const { project, userProject } = req
+
+      const { UserProject } = modelFactory.getAllModels()
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          id: userProject.id,
+          project_id: project.id
+        }
+      })
+
+      if (!userProjectInfo) return next(new APIError('User not found', httpStatus.NOT_FOUND))
       return apiResponse.success(res, req.userProject)
     } catch (error) {
       return next(error)
