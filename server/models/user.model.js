@@ -48,7 +48,7 @@ const schema = {
     type: Sequelize.TEXT,
     allowNull: true
   },
-  confirm: {
+  confirmed: {
     type: Sequelize.BOOLEAN,
     defaultValue: false
   },
