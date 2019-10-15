@@ -25,7 +25,8 @@ const schema = {
   },
   status: {
     type: Sequelize.STRING(255),
-    allowNull: true
+    allowNull: true,
+    defaultValue: 'New'
   },
   is_active: {
     type: Sequelize.BOOLEAN,

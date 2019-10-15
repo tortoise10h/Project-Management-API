@@ -54,7 +54,7 @@ const TEMPLATE = {
     ${style}
     <h2>Welcome to project management application of <strong>Banana boys</strong></h2>
     <br />
-    <a class="button" style="vertical-align:middle" href="${frontendPageUrl}/verify?token={{token}}&email={{email}}">Confirm this email</a>
+    <a class="button" style="vertical-align:middle" href="${frontendPageUrl}/#/verify?token={{token}}&email={{email}}">Confirm this email</a>
     <br />
     <p>Have a nice day!</p>
     <br />

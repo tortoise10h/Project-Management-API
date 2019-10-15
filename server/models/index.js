@@ -107,7 +107,7 @@ class ModelFactory {
       where: { email: 'tortoise10h@gmail.com' },
       defaults: {
         password: '12345678',
-        confirm: true,
+        confirmed: true,
         name: 'Nguyễn Tấn Huy',
         phone: '0397097276'
       }
@@ -117,7 +117,7 @@ class ModelFactory {
       where: { email: 'hoailinhkt2015@gmail.com' },
       defaults: {
         password: '12345678',
-        confirm: true,
+        confirmed: true,
         name: 'Lường Tú Linh',
         phone: '03437097276'
       }
@@ -127,7 +127,7 @@ class ModelFactory {
       where: { email: 'minhminion2015@gmail.com' },
       defaults: {
         password: '12345678',
-        confirm: true,
+        confirmed: true,
         name: 'Lưu Bảo Minh',
         phone: '03978227276'
       }
@@ -137,7 +137,7 @@ class ModelFactory {
       where: { email: 'nahntvt@gmail.com' },
       defaults: {
         password: '12345678',
-        confirm: true,
+        confirmed: true,
         name: 'Nguyễn Anh Khoa',
         phone: '03970972326'
       }
@@ -147,7 +147,7 @@ class ModelFactory {
       where: { email: 'guest@gmail.com' },
       defaults: {
         password: '12345678',
-        confirm: true,
+        confirmed: true,
         name: 'Guest Name',
         phone: '0999999999'
       }
