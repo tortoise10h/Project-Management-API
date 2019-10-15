@@ -22,6 +22,10 @@ const schema = {
     type: Sequelize.STRING(100),
     allowNull: false
   },
+  is_favorite: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false
+  },
   is_active: {
     type: Sequelize.BOOLEAN,
     defaultValue: true

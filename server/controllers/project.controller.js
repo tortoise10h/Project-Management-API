@@ -96,6 +96,7 @@ class ProjectController {
         owner: Joi.number().optional(),
         sort: Joi.string().optional().default('title'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC']).default('ASC'),
+        is_favorite: Joi.boolean().optional(),
         page: Joi.number().optional().min(1).default(1),
         offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET).default(constant.SERVER.API_DEFAULT_OFFSET)
       })
@@ -103,7 +104,7 @@ class ProjectController {
       const validater = Joi.validate(req.query, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
       const {
-        sort, direction, page, offset
+        sort, direction, page, offset, is_favorite: isFavorite
       } = validater.value
 
       const { author } = req
@@ -111,7 +112,7 @@ class ProjectController {
       /** Map search */
       const filter = {}
       Object.keys(validater.value).forEach((key) => {
-        if (!['sort', 'direction', 'page', 'offset'].includes(key)) {
+        if (!['sort', 'direction', 'page', 'offset', 'is_favorite'].includes(key)) {
           switch (typeof validater.value[key]) {
             case 'string':
               filter[key] = { [Op.like]: `%${validater.value[key]}%` }
@@ -125,6 +126,12 @@ class ProjectController {
           }
         }
       })
+
+      const userProjectWhere = {
+        user_id: author.id
+      }
+
+      if (isFavorite) userProjectWhere.is_favorite = isFavorite
 
       /** Get list of project */
       const queryOffset = (page - 1) * offset
@@ -149,7 +156,7 @@ class ProjectController {
           {
             model: UserProject,
             require: true,
-            where: { user_id: author.id }
+            where: { ...userProjectWhere }
           }
         ],
         offset: queryOffset,
@@ -163,6 +170,7 @@ class ProjectController {
           delete user.UserProject
           return user
         })
+        project.is_favorite = project.UserProjects[0].is_favorite
         project.user_role = project.UserProjects[0].role
         delete project.UserProjects
         return project
