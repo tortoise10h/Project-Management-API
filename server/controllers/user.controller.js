@@ -398,6 +398,35 @@ class UserController {
       return next(error)
     }
   }
+
+  async updateFavoriteInUserProject (req, res, next) {
+    try {
+      const { project, author, user } = req
+      const schema = Joi.object().keys({
+        is_favorite: Joi.boolean().required()
+      })
+      /** Validate input */
+      const validater = Joi.validate(req.body, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const { is_favorite: favorite } = validater.value
+
+      /** Validate author */
+      if (user.id !== author.id) return next(new APIError('You don\'t have a permission', httpStatus.UNAUTHORIZED))
+      const UserProject = modelFactory.getModel(constant.DB_MODEL.USER_PROJECT)
+      const updatedFavorite = await UserProject.update({
+        is_favorite: favorite
+      }, {
+        where: {
+          project_id: project.id,
+          user_id: author.id
+        }
+      })
+
+      return apiResponse.success(res, updatedFavorite)
+    } catch (error) {
+      return next(error)
+    }
+  }
 }
 
 module.exports = new UserController()
