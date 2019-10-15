@@ -18,7 +18,7 @@ class AuthController {
         email: Joi.string().required().email({ minDomainSegments: 2 }),
         password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/).min(8).max(60)
           .required(),
-        confirm: Joi.string()
+        confirmed: Joi.string()
           .regex(/^[a-zA-Z0-9]{3,30}$/)
           .min(8)
           .max(60)
@@ -47,7 +47,7 @@ class AuthController {
       const errors = await checkFieldsDuplicate(User, { email, phone })
       const newUserInfo = { ...validater.value }
       delete newUserInfo.summary
-      delete newUserInfo.confirm
+      delete newUserInfo.confirmed
       if (errors.length > 0) return next(new APIError(errors, httpStatus.BAD_REQUEST))
 
       /** Create new user */
@@ -148,7 +148,7 @@ class AuthController {
       if (!user) return next(new APIError('User not found', httpStatus.NOT_FOUND))
       if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.BAD_REQUEST))
       if (!user.is_active) return next(new APIError('User is banned', httpStatus.BAD_REQUEST))
-      if (!user.confirm) return next(new APIError('User is not verified', httpStatus.BAD_REQUEST))
+      if (!user.confirmed) return next(new APIError('User is not verified', httpStatus.BAD_REQUEST))
 
       /** Check input password and password in database */
       const match = await bcrypt.compare(password, user.password)
