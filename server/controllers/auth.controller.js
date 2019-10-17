@@ -185,6 +185,7 @@ class AuthController {
       try {
         jwt.verify(token, constant.JWT_SECRET)
       } catch (err) {
+        logger.error(`[Server] Authentication::refresh::verify: ${err.name}`)
         logger.error(`[Server] Authentication::refresh::verify: ${err.message}`)
         if (err.name !== 'TokenExpiredError') {
           return next(new APIError('Token validation error', httpStatus.UNAUTHORIZED))
@@ -194,7 +195,7 @@ class AuthController {
 
       /** Validate user status */
       const {
-        User, Log
+        User
       } = modelFactory.getAllModels()
       const user = await User.findByPk(decoded.id, {
       })
@@ -209,13 +210,6 @@ class AuthController {
         ...decoded,
         exp
       }, constant.JWT_SECRET)
-
-      const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-      await Log.create({
-        userid: user.id,
-        ip,
-        action: constant.USER_ACTION.REFRESH
-      })
 
       return apiResponse.success(res, { user, token: newToken, exp })
     } catch (error) {
