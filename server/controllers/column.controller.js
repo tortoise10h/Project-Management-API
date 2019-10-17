@@ -5,6 +5,7 @@ const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
+const checkDuplicateFields = require('../lib/check-fields-duplicate')
 
 class ColumnController {
   async addColumn (req, res, next) {
@@ -19,14 +20,22 @@ class ColumnController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
+      const { title } = validater.value
       const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
+      /** Validate duplicate field */
+      const errors = await checkDuplicateFields(Column, { title })
+
+      if (errors.length > 0) {
+        return next(new APIError(errors, httpStatus.BAD_REQUEST))
+      }
+
       const newColumnInfo = { ...validater.value }
       newColumnInfo.created_by = author.id
       newColumnInfo.project_id = project.id
 
       /** Create new label */
-      const column = await Column.create({ ...newColumnInfo })
-      return apiResponse.success(res, column)
+      const createColumn = await Column.create({ ...newColumnInfo })
+      return apiResponse.success(res, createColumn)
     } catch (error) {
       return next(error)
     }
