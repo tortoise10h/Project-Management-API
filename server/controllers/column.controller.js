@@ -5,7 +5,6 @@ const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
-const checkDuplicateFields = require('../lib/check-fields-duplicate')
 
 class ColumnController {
   async addColumn (req, res, next) {
@@ -22,12 +21,16 @@ class ColumnController {
 
       const { title } = validater.value
       const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
-      /** Validate duplicate field */
-      const errors = await checkDuplicateFields(Column, { title })
+      /** Validate duplicate title in project */
+      const column = await Column.findOne({
+        where: {
+          title: title,
+          project_id: project.id,
+          is_deleted: false
+        }
+      })
 
-      if (errors.length > 0) {
-        return next(new APIError(errors, httpStatus.BAD_REQUEST))
-      }
+      if (column) return next(new APIError('Title must be uniqued'), httpStatus.BAD_REQUEST)
 
       const newColumnInfo = { ...validater.value }
       newColumnInfo.created_by = author.id

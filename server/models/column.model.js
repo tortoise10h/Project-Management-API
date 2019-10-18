@@ -12,8 +12,7 @@ const schema = {
   },
   title: {
     type: Sequelize.STRING(255),
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   description: {
     type: Sequelize.TEXT,
