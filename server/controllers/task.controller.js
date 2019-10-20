@@ -310,6 +310,42 @@ class TaskController {
       return next(error)
     }
   }
+
+  async addTaskLabel (req, res, next) {
+    try {
+      const { task } = req
+      const schema = Joi.object().keys({
+        label_id: Joi.number().optional()
+      })
+
+      /** Validate input */
+      const validater = Joi.validate(req.body, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+
+      const { label_id: labelId } = validater.value
+
+      /** Validate duplicate label */
+      const Label = modelFactory.getModel(constant.DB_MODEL.LABEL)
+      const labelInfo = await Label.findByPk(labelId)
+      if (!labelInfo) return next(new APIError('Label not found'), httpStatus.BAD_REQUEST)
+      const TaskLabel = modelFactory.getModel(constant.DB_MODEL.TASK_LABEL)
+      const taskLabelInfo = await TaskLabel.findOne({
+        where: {
+          task_id: task.id,
+          label_id: labelId
+        }
+      })
+      if (taskLabelInfo) return next(new APIError('Label is already existed in task'), httpStatus.BAD_REQUEST)
+
+      /** Create new task label */
+      const newTaskLabelInfo = { ...validater.value }
+      newTaskLabelInfo.task_id = task.id
+      const taskLabel = await TaskLabel.create({ ...newTaskLabelInfo })
+      return apiResponse.success(res, taskLabel)
+    } catch (error) {
+      return next(error)
+    }
+  }
 }
 
 module.exports = new TaskController()
