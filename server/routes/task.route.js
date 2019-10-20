@@ -23,6 +23,10 @@ router.route('/:taskId/todo')
   /** GET api/task/:taskId/todo - list all todo in system, can filter */
   .get(authorController.validate, todoController.listTodo)
 
+router.route('/:taskId/label')
+  /** POST api/task/:taskId/label - add task label */
+  .post(authorController.validate, taskController.addTaskLabel)
+
 router.param('taskId', taskController.loadTask)
 
 module.exports = router
