@@ -21,6 +21,10 @@ router.route('/:projectId')
   /** GET /api/project/:projectId - get project by id */
   .get(authorController.validate, projectController.getProject)
 
+router.route('/:projectId/user-in-project')
+  /** GET /api/project/:projectId/user-in-project - get user in project */
+  .get(authorController.validate, userController.getUserProject)
+
 router.route('/:projectId/user-project')
   /** POST /api/project/:projectId/user-project - Add user to project */
   .post(authorController.validate, userController.addUserToProject)
@@ -34,9 +38,6 @@ router.route('/:projectId/user-project')
 router.route('/:projectId/user-project/:userProjectId')
   /** PUT /api/project/:projectId/user-project/:userProjectId - Update user role in project */
   .put(authorController.validate, userController.updateUserRoleInProject)
-
-  /** GET /api/project/:projectId/user-project/:userProjectId - get user project */
-  .get(authorController.validate, userController.getUserProject)
 
 router.param('projectId', projectController.loadProject)
 router.param('userProjectId', userController.loadUserProject)
