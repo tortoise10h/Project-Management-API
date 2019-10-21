@@ -62,7 +62,24 @@ const constant = {
     'inactivedAt',
     'is_deleted'
   ],
-  MONTH_IN_YEAR: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+  LOG_ACTION: {
+    ADD: 'Add',
+    UPDATE: 'Update',
+    REMOVE: 'Remove',
+    MOVE_TASK: 'Move Task'
+  },
+  KEY_NAME: {
+    title: 'Title',
+    description: 'Description',
+    start_date: 'Start date',
+    end_date: 'End date',
+    status: 'Status',
+    role: 'Role',
+    color: 'Color',
+    due_date: 'Due date'
+  },
+  MONTH_IN_YEAR: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  PROJECT_TIMEZONE: 'Asia/Ho_Chi_Minh'
 }
 
 module.exports = constant

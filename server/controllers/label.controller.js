@@ -1,9 +1,12 @@
 const httpStatus = require('http-status')
 const Joi = require('@hapi/joi')
+const moment = require('moment-timezone')
 const _ = require('lodash')
 const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
+const logController = require('./log.controller')
+const { logUpdate } = require('../lib/log-message')
 const { Op } = require('sequelize')
 
 class LabelController {
@@ -26,6 +29,14 @@ class LabelController {
 
       /** Create new label */
       const label = await Label.create({ ...newLabelInfo })
+      /** Log user activity */
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} created a label name "${newLabelInfo.title}"`,
+        project.id
+      )
+
       return apiResponse.success(res, label)
     } catch (error) {
       return next(error)
@@ -73,6 +84,15 @@ class LabelController {
 
       /** Update label info */
       const updatedLabel = await label.update({ ...validater.value })
+
+      /** Log user activity */
+      const logMessage = logUpdate(validater.value, label)
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.UPDATE,
+        `${req.author.name} updated label: ${logMessage}`,
+        label.project_id
+      )
 
       /** Return new label update info */
       return apiResponse.success(res, updatedLabel)

@@ -26,6 +26,9 @@ const schema = {
     type: Sequelize.BIGINT(20),
     allowNull: false
   },
+  time_logged: {
+    type: Sequelize.DATE
+  },
   is_active: {
     type: Sequelize.BOOLEAN,
     defaultValue: true

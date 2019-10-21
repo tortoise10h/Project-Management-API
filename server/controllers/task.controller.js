@@ -4,6 +4,8 @@ const _ = require('lodash')
 const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
+const logController = require('./log.controller')
+const { logUpdate, logAddMany } = require('../lib/log-message')
 
 const { Op } = require('sequelize')
 
@@ -29,6 +31,8 @@ const processAddUsersToTask = async (task, userIds, author) => {
         user_id: userId,
         added_by: author.id
       })
+      /** Add name to return result to log activity */
+      newUserTask.name = userInfo.name
       return resolve([null, newUserTask])
     } catch (error) {
       return resolve(error)
@@ -157,6 +161,13 @@ class TaskController {
         created_by: author.id,
         column_id: column.id
       })
+      /** Log user activity */
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} created new task "${newTask.title}"`,
+        column.project_id
+      )
       return apiResponse.success(res, newTask)
     } catch (error) {
       return next(error)
@@ -215,9 +226,38 @@ class TaskController {
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const { column_id: columnId } = validater.value
+      const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
 
       /** Update task info */
       const updatedTask = await task.update({ ...validater.value })
+
+      /** Get column info with task id get project id to log activity */
+      const columnInfo = await Column.findByPk(task.column_id, {
+        attributes: ['project_id', 'title']
+      })
+
+      /** Log user activity */
+      if (columnId) {
+        /** If column_id exists => task was moved then log different message than normal update */
+        const newColumnInfo = await Column.findByPk(columnId, {
+          attributes: ['title']
+        })
+        await logController.logActivity(
+          req.author,
+          constant.LOG_ACTION.MOVE_TASK,
+          `${req.author.name} moved task "${task.title}" from column "${columnInfo.title}" to column "${newColumnInfo.title}"`,
+          columnInfo.project_id
+        )
+      } else {
+        const logMessage = logUpdate(validater.value, task)
+        await logController.logActivity(
+          req.author,
+          constant.LOG_ACTION.UPDATE,
+          `${req.author.name} updated task: ${logMessage}`,
+          columnInfo.project_id
+        )
+      }
 
       /** Return new task update info */
       return apiResponse.success(res, updatedTask)
@@ -231,7 +271,7 @@ class TaskController {
       const schema = Joi.object().keys({
         user_ids: Joi.array().required().items(Joi.number()).min(1)
       })
-
+      const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
       const { author, task } = req
       /** Validate Input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
@@ -247,6 +287,19 @@ class TaskController {
         if (data[0]) return failedList.push(data[0])
         return successList.push(data[1])
       })
+
+      /** Get column from task id get project id to log activity */
+      const columnInfo = await Column.findByPk(task.column_id, {
+        attributes: ['project_id']
+      })
+      /** Log user activity */
+      const logMessage = logAddMany(successList, 'name')
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} added: ${logMessage} to task`,
+        columnInfo.project_id
+      )
 
       return apiResponse.success(res, { success_list: successList, failed_list: failedList })
     } catch (error) {
@@ -265,7 +318,7 @@ class TaskController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
       const { user_id: userId } = validater.value
-      const { UserTask } = modelFactory.getAllModels()
+      const { UserTask, Column } = modelFactory.getAllModels()
 
       /** Validate user is in task */
       const oldUser = await UserTask.findOne({
@@ -283,6 +336,19 @@ class TaskController {
           task_id: task.id
         }
       })
+
+      /** Get column from task id get project id to log activity */
+      const columnInfo = await Column.findByPk(task.column_id, {
+        attributes: ['project_id']
+      })
+
+      /** Log user activity */
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.REMOVE,
+        `${req.author.name} removed: "${oldUser.name}" from task "${task.title}"`,
+        columnInfo.project_id
+      )
 
       return apiResponse.success(res, 'Deleted successfully')
     } catch (error) {

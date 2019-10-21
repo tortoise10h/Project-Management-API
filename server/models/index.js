@@ -36,7 +36,7 @@ class ModelFactory {
   async buildAssociation () {
     const {
       User, Project, Task, Log, Media, Todo, Label, Column,
-      UserTask, UserProject, TaskLabel, UserLog
+      UserTask, UserProject, TaskLabel
     } = this.products
 
     /** User & Everyone */
