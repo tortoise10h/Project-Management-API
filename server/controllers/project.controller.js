@@ -75,7 +75,7 @@ class ProjectController {
       const { project } = req
 
       const { User, Project } = modelFactory.getAllModels()
-      const projects = await Project.findOne({
+      let projectInfo = await Project.findOne({
         where: {
           id: project.id,
           is_deleted: false
@@ -90,16 +90,13 @@ class ProjectController {
           }
         }]
       })
-      projects.rows = projects.rows.map((project) => {
-        project = project.toJSON()
-        /** Remove user project field */
-        project.Users = project.Users.map((user) => {
-          delete user.UserProject
-          return user
-        })
-        return project
+      projectInfo = projectInfo.toJSON()
+      /** Remove user project field */
+      projectInfo.Users = projectInfo.Users.map((user) => {
+        delete user.UserProject
+        return user
       })
-      return apiResponse.success(res, projects)
+      return apiResponse.success(res, projectInfo)
     } catch (error) {
       return next(error)
     }
