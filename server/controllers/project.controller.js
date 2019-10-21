@@ -5,6 +5,8 @@ const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
+const logController = require('./log.controller')
+const { logUpdate } = require('../lib/log-message')
 
 const compareTaskIndex = (a, b) => {
   if (a.index > b.index) {
@@ -104,12 +106,14 @@ class ProjectController {
 
   async updateProject (req, res, next) {
     try {
-      const { project } = req
+      const { project, author } = req
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
         description: Joi.string().optional(),
-        status: Joi.string().optional().max(255)
+        status: Joi.string().optional().max(255),
+        start_date: Joi.date().optional(),
+        end_date: Joi.date().optional()
       })
 
       /** Validate input */
@@ -118,6 +122,14 @@ class ProjectController {
 
       /** Update project info */
       const updatedProject = await project.update({ ...validater.value })
+      /** Log activity of user */
+      const logMessage = logUpdate(validater.value, project)
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.UPDATE,
+        `${author.name} updated project: ${logMessage}`,
+        project.id
+      )
 
       /** Return new project update info */
       return apiResponse.success(res, updatedProject)
