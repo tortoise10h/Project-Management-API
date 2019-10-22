@@ -262,10 +262,15 @@ class TaskController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
       const { user_id: userId } = validater.value
-      const { UserTask, User } = modelFactory.getAllModels()
+      const { UserTask } = modelFactory.getAllModels()
 
       /** Validate user is in task */
-      const oldUser = await User.findByPk(userId)
+      const oldUser = await UserTask.findOne({
+        where: {
+          user_id: userId,
+          task_id: task.id
+        }
+      })
       if (!oldUser) return next(new APIError({ field: 'userId', value: userId, message: 'This user is not in this task' }, httpStatus.BAD_REQUEST))
 
       /** Remove user from task */
