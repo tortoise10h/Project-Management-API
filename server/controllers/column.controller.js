@@ -72,16 +72,29 @@ class ColumnController {
 
   async updateColumn (req, res, next) {
     try {
-      const { column } = req
+      const { column, author } = req
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        description: Joi.string().optional()
+        description: Joi.string().optional(),
+        is_locked: Joi.boolean().optional(),
+        index: Joi.number().optional()
       })
 
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+
+      /** Validate user permission */
+      const UserProject = modelFactory.getModel(constant.DB_MODEL.USER_PROJECT)
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          user_id: author.id,
+          is_deleted: false
+        }
+      })
+      const { is_locked: isLocked } = validater.value
+      if (isLocked && userProjectInfo.role === constant.USER_ROLE.MEMBER) return next(new APIError('You don\'t have a permission'), httpStatus.UNAUTHORIZED)
 
       /** Update column info */
       const updatedColumn = await column.update({ ...validater.value })
@@ -101,6 +114,8 @@ class ColumnController {
         created_by: Joi.number().optional(),
         is_active: Joi.boolean().optional(),
         project_id: Joi.number().optional(),
+        is_locked: Joi.boolean().optional(),
+        index: Joi.number().optional(),
         sort: Joi.string().optional().default('title'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC']).default('ASC'),
         page: Joi.number().optional().min(1).default(1),

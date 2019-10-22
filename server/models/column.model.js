@@ -22,6 +22,13 @@ const schema = {
     type: Sequelize.BIGINT(20),
     allowNull: false
   },
+  is_locked: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false
+  },
+  index: {
+    type: Sequelize.INTEGER
+  },
   is_active: {
     type: Sequelize.BOOLEAN,
     defaultValue: true
@@ -54,9 +61,24 @@ class ColumnModel extends IModel {
     /** Sync model to database */
     await this.model.sync()
 
+    /** Before update a column */
     this.model.addHook('beforeUpdate', async (column) => {
       if (column.is_active === false) column.inactivedAt = moment.utc()
       if (column.is_deleted === true) column.deletedAt = moment.utc()
+    })
+
+    /** Before create a column */
+    this.model.addHook('beforeCreate', async (column) => {
+      /** Auto increase index of column when create new */
+      const [last] = await this.model.findAll({
+        where: { project_id: column.project_id },
+        order: [['index', 'desc']],
+        limit: 1
+      })
+      let index = 0
+      if (last) index = last.index
+      column.index = ++index
+      return column
     })
   }
 }
