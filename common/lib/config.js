@@ -46,16 +46,6 @@ class Config {
       }
     }
   }
-
-  getReCaptchaConfig () {
-    return {
-      skip: process.env.RECAPTCHA_SKIP ? process.env.RECAPTCHA_SKIP.trim() === 'true' : false,
-      v2: {
-        sitekey: process.env.RECAPTCHA_V2_SITE_KEY ? process.env.RECAPTCHA_V2_SITE_KEY.trim() : '6LfeCLUUAAAAALLSgBWnBu4zb49-igc4oIUCNAI7',
-        secretKey: process.env.RECAPTCHA_V2_SECRET_KEY ? process.env.RECAPTCHA_V2_SECRET_KEY.trim() : '6LdC-7QUAAAAAJQJthjT-6oBSwYgxvK8X1NsEgYF'
-      }
-    }
-  }
 }
 
 module.exports = new Config()
