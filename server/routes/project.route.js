@@ -25,6 +25,9 @@ router.route('/:projectId/user-in-project')
   /** GET /api/project/:projectId/user-in-project - get user in project */
   .get(authorController.validate, userController.getUserProject)
 
+  /** PUT /api/project/:projectId/user-in-project - Leave project */
+  .put(authorController.validate, projectController.leaveProject)
+
 router.route('/:projectId/user-project')
   /** POST /api/project/:projectId/user-project - Add user to project */
   .post(authorController.validate, userController.addUserToProject)

@@ -7,6 +7,7 @@ const modelFactory = require('../models')
 const fs = require('fs')
 const checkDuplicateFields = require('../lib/check-fields-duplicate')
 
+const { sendMail } = require('./../services/email')
 const { Op } = require('sequelize')
 
 class UserController {
@@ -312,7 +313,8 @@ class UserController {
       const oldUserProject = await UserProject.findOne({
         where: {
           user_id: userId,
-          project_id: project.id
+          project_id: project.id,
+          is_deleted: false
         }
       })
       const errors = []
@@ -338,6 +340,19 @@ class UserController {
         role: constant.USER_ROLE.MEMBER
       })
 
+      /** Send mail to announce new user */
+      await sendMail(
+        'addedUserToProject',
+        {
+          authorName: author.name,
+          projectName: project.name,
+          projectId: project.id
+        },
+        {
+          to: user.email,
+          subject: `[Banana Boys] You have added to '${project.name} project'`
+        }
+      )
       return apiResponse.success(res, `Add user with id ${userId} to project successfully`)
     } catch (error) {
       return next(error)

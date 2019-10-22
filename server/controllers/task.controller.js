@@ -8,7 +8,7 @@ const modelFactory = require('../models')
 const { Op } = require('sequelize')
 
 const processAddUsersToTask = async (task, userIds, author) => {
-  const UserTask = modelFactory.getModel(constant.DB_MODEL.USER_TASK)
+  const { UserTask, User } = modelFactory.getAllModels()
   const addSingleUserToProject = userId => new Promise(async (resolve) => {
     try {
       /** validate if user already in task */
@@ -18,7 +18,10 @@ const processAddUsersToTask = async (task, userIds, author) => {
           user_id: userId
         }
       })
-      if (oldUserTask) return resolve({ field: 'userId', value: userId, message: `User ${userId} is already in this task` })
+      if (oldUserTask) return resolve({ field: 'userId', value: userId, message: 'User is already in this task' })
+      /** Validate user is valid */
+      const userInfo = await User.findByPk(userId)
+      if (!userInfo || userInfo.is_deleted) return resolve({ field: 'userId', value: userId, message: 'User is not valid' })
 
       /** Add user to task */
       const newUserTask = await UserTask.create({

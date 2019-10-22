@@ -170,7 +170,8 @@ class ProjectController {
       })
 
       const userProjectWhere = {
-        user_id: author.id
+        user_id: author.id,
+        is_deleted: false
       }
 
       if (isFavorite) userProjectWhere.is_favorite = isFavorite
@@ -255,6 +256,38 @@ class ProjectController {
         return column
       })
       return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async leaveProject (req, res, next) {
+    try {
+      const { project, author } = req
+      const UserProject = modelFactory.getModel(constant.DB_MODEL.USER_PROJECT)
+
+      /** Validate user is in project */
+      const oldUserProject = await UserProject.findOne({
+        where: {
+          user_id: author.id,
+          project_id: project.id
+        }
+      })
+      if (!oldUserProject || oldUserProject.is_deleted) {
+        return next(new APIError('You are not in that project', httpStatus.BAD_REQUEST))
+      }
+
+      /** Remove user out of project */
+      await UserProject.destroy(
+        {
+          where: {
+            user_id: author.id,
+            project_id: project.id
+          }
+        }
+      )
+
+      return apiResponse.success(res, `You have leaved project ${project.name} successfully`)
     } catch (error) {
       return next(error)
     }
