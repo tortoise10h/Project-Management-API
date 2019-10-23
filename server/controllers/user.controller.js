@@ -10,6 +10,69 @@ const checkDuplicateFields = require('../lib/check-fields-duplicate')
 const { sendMail } = require('./../services/email')
 const { Op } = require('sequelize')
 
+const processAddUsersToProject = async (project, invitationMessage, newUserIds, author) => {
+  const { UserProject, User } = modelFactory.getAllModels()
+  const addSingleUserToProject = userId => new Promise(async (resolve) => {
+    try {
+      /** Validate correct owner */
+      if (project.owner !== author.id) {
+        return resolve('You don\'t have a permission')
+      }
+
+      const oldUserProject = await UserProject.findOne({
+        where: {
+          user_id: userId,
+          project_id: project.id,
+          is_deleted: false
+        }
+      })
+      const errors = []
+      if (oldUserProject) {
+        errors.push('Duplicate user in project')
+      }
+      if (errors.length > 0) {
+        return resolve([errors])
+      }
+
+      /** Validate valid user */
+      const user = await User.findByPk(userId)
+      if (!user || user.is_deleted || !user.is_active) {
+        return resolve(['User is not valid'])
+      }
+
+      if (user.id === project.owner) {
+        return resolve(['You are the owner of project!'])
+      }
+
+      /** Add user to project */
+      await UserProject.create({
+        user_id: userId,
+        project_id: project.id,
+        role: constant.USER_ROLE.MEMBER
+      })
+
+      /** Send mail to announce new user */
+      await sendMail(
+        'addedUserToProject',
+        {
+          authorName: author.name,
+          projectName: project.name,
+          projectId: project.id,
+          invitationMessage
+        },
+        {
+          to: user.email,
+          subject: `[Banana Boys] You have added to '${project.name} project'`
+        }
+      )
+      return resolve([null, `Add user with id ${userId} to project successfully`])
+    } catch (error) {
+      return resolve(error)
+    }
+  })
+  return Promise.all(newUserIds.map(userId => addSingleUserToProject(userId)))
+}
+
 class UserController {
   async listUser (req, res, next) {
     try {
@@ -22,10 +85,10 @@ class UserController {
         profile_title: Joi.string().optional(),
         sort: Joi.string().optional().default('name'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
-          .default('ASC'),
+        .default('ASC'),
         page: Joi.number().optional().min(1).default(1),
         offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET)
-          .default(constant.SERVER.API_DEFAULT_OFFSET),
+        .default(constant.SERVER.API_DEFAULT_OFFSET),
         is_active: Joi.boolean().optional()
       })
 
@@ -97,10 +160,10 @@ class UserController {
         role: Joi.string().optional(),
         sort: Joi.string().optional().default('createdAt'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
-          .default('ASC'),
+        .default('ASC'),
         page: Joi.number().optional().min(1).default(1),
         offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET)
-          .default(constant.SERVER.API_DEFAULT_OFFSET),
+        .default(30),
         is_active: Joi.boolean().optional()
       })
 
@@ -293,69 +356,29 @@ class UserController {
     }
   }
 
-  async addUserToProject (req, res, next) {
+  async addUsersToProject (req, res, next) {
     try {
       const schema = Joi.object().keys({
-        user_id: Joi.number().min(1).required(),
+        user_ids: Joi.array().required().min(1),
         inviation_message: Joi.string().optional()
       })
-      /** Validate input */
+
+      const { author, project } = req
+      /** Validate Input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
-      const { user_id: userId, inviation_message: invitationMessage } = validater.value
-      const { project, author } = req
-      const { User, UserProject } = modelFactory.getAllModels()
+      const { user_ids: userIds, inviation_message: invitationMessage } = validater.value
 
-      /** Validate correct owner */
-      if (project.owner !== author.id) {
-        return next(new APIError('You don\'t have a permission', httpStatus.UNAUTHORIZED))
-      }
-
-      const oldUserProject = await UserProject.findOne({
-        where: {
-          user_id: userId,
-          project_id: project.id,
-          is_deleted: false
-        }
-      })
-      const errors = []
-      if (oldUserProject) errors.push({ field: 'userId', value: userId, message: 'Duplicate user in project' })
-      if (errors.length > 0) {
-        return next(new APIError(errors, httpStatus.BAD_REQUEST))
-      }
-
-      /** Validate valid user */
-      const user = await User.findByPk(userId)
-      if (!user || user.is_deleted || !user.is_active) {
-        return next(new APIError('User is not valid', httpStatus.BAD_REQUEST))
-      }
-
-      if (user.id === project.owner) {
-        return next(new APIError('You are the owner of project!', httpStatus.BAD_REQUEST))
-      }
-
-      /** Add user to project */
-      await UserProject.create({
-        user_id: userId,
-        project_id: project.id,
-        role: constant.USER_ROLE.MEMBER
+      const successList = []
+      const failedList = []
+      const addUserToProjectResult = await processAddUsersToProject(project, invitationMessage, userIds, author)
+      /** Loop through the result if user was failed than push to failed list else push to success list */
+      addUserToProjectResult.forEach((data) => {
+        if (data[0]) return failedList.push(data[0])
+        return successList.push(data[1])
       })
 
-      /** Send mail to announce new user */
-      await sendMail(
-        'addedUserToProject',
-        {
-          authorName: author.name,
-          projectName: project.name,
-          projectId: project.id,
-          invitationMessage
-        },
-        {
-          to: user.email,
-          subject: `[Banana Boys] You have added to '${project.name} project'`
-        }
-      )
-      return apiResponse.success(res, `Add user with id ${userId} to project successfully`)
+      return apiResponse.success(res, { success_list: successList, failed_list: failedList })
     } catch (error) {
       return next(error)
     }

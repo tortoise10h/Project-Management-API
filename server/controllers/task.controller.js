@@ -9,7 +9,7 @@ const { Op } = require('sequelize')
 
 const processAddUsersToTask = async (task, userIds, author) => {
   const { UserTask, User } = modelFactory.getAllModels()
-  const addSingleUserToProject = userId => new Promise(async (resolve) => {
+  const addSingleUserToTask = userId => new Promise(async (resolve) => {
     try {
       /** validate if user already in task */
       const oldUserTask = await UserTask.findOne({
@@ -34,7 +34,7 @@ const processAddUsersToTask = async (task, userIds, author) => {
       return resolve(error)
     }
   })
-  return Promise.all(userIds.map(userId => addSingleUserToProject(userId)))
+  return Promise.all(userIds.map(userId => addSingleUserToTask(userId)))
 }
 
 const processUpdateTasksIndex = async (tasks) => {

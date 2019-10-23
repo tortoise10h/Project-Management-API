@@ -30,7 +30,7 @@ router.route('/:projectId/user-in-project')
 
 router.route('/:projectId/user-project')
   /** POST /api/project/:projectId/user-project - Add user to project */
-  .post(authorController.validate, userController.addUserToProject)
+  .post(authorController.validate, userController.addUsersToProject)
 
   /** POST /api/project/:projectId/user-project - Remove user from project */
   .delete(authorController.validate, userController.removeUserFromProject)
