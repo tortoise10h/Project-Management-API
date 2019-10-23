@@ -63,6 +63,8 @@ const TEMPLATE = {
     <h2>Congratulation!</h2>
     <br />
     <p>You have added to {{projectName}} by {{authorName}}</p>
+    <br>
+    <p>{{invitationMessage}}</p>
     <br />
     <p>Go to that project <a href="${frontendPageUrl}/#/project-kanban/{{projectId}}">here</a> and have a good time!</p>
     <br />

@@ -296,12 +296,13 @@ class UserController {
   async addUserToProject (req, res, next) {
     try {
       const schema = Joi.object().keys({
-        user_id: Joi.number().min(1).required()
+        user_id: Joi.number().min(1).required(),
+        inviation_message: Joi.string().optional()
       })
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
-      const { user_id: userId } = validater.value
+      const { user_id: userId, inviation_message: invitationMessage } = validater.value
       const { project, author } = req
       const { User, UserProject } = modelFactory.getAllModels()
 
@@ -346,7 +347,8 @@ class UserController {
         {
           authorName: author.name,
           projectName: project.name,
-          projectId: project.id
+          projectId: project.id,
+          invitationMessage
         },
         {
           to: user.email,
