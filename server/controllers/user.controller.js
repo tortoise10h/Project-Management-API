@@ -6,6 +6,8 @@ const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const fs = require('fs')
 const checkDuplicateFields = require('../lib/check-fields-duplicate')
+const logController = require('./log.controller')
+const { logUpdate, logAddMany } = require('../lib/log-message')
 
 const { sendMail } = require('./../services/email')
 const { Op } = require('sequelize')
@@ -56,16 +58,19 @@ const processAddUsersToProject = async (project, invitationMessage, newUserIds, 
         'addedUserToProject',
         {
           authorName: author.name,
-          projectName: project.name,
+          projectName: project.title,
           projectId: project.id,
           invitationMessage
         },
         {
           to: user.email,
-          subject: `[Banana Boys] You have added to '${project.name} project'`
+          subject: `[Banana Boys] You have added to '${project.title} project'`
         }
       )
-      return resolve([null, `Add user with id ${userId} to project successfully`])
+      return resolve([null, {
+        message: `Add user with id ${userId} to project successfully`,
+        name: user.name
+      }])
     } catch (error) {
       return resolve(error)
     }
@@ -450,6 +455,15 @@ class UserController {
         return successList.push(data[1])
       })
 
+      /** Log user activity */
+      const logMessage = logAddMany(successList, 'name')
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} added: ${logMessage} to project`,
+        project.id
+      )
+
       return apiResponse.success(res, { success_list: successList, failed_list: failedList })
     } catch (error) {
       return next(error)
@@ -496,6 +510,13 @@ class UserController {
           project_id: project.id
         }
       })
+
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.REMOVE,
+        `${author.name} removed user "${user.name}" from project`,
+        project.id
+      )
       return apiResponse.success(res, 'Remove user successfully')
     } catch (error) {
       return next(error)
@@ -514,10 +535,27 @@ class UserController {
       })
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const User = modelFactory.getModel(constant.DB_MODEL.USER)
+
+      /** Get user to validate valid and user for log activity */
+      const user = await User.findByPk(userProject.user_id, {
+        attributes: ['id', 'name']
+      })
+      if (!user || user.is_deleted) {
+        return next(new APIError('User is not valid', httpStatus.BAD_REQUEST))
+      }
+
       const { role } = validater.value
       const updatedUserProject = await userProject.update({
         role
       })
+
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.UPDATE,
+        `${req.author.name} updated role of user "${user.name}" to "${role}"`,
+        project.id
+      )
 
       return apiResponse.success(res, updatedUserProject)
     } catch (error) {
