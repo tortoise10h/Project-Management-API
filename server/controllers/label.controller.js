@@ -1,6 +1,5 @@
 const httpStatus = require('http-status')
 const Joi = require('@hapi/joi')
-const moment = require('moment-timezone')
 const _ = require('lodash')
 const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')

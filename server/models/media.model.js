@@ -14,10 +14,6 @@ const schema = {
     type: Sequelize.STRING(255),
     allowNull: false
   },
-  description: {
-    type: Sequelize.TEXT,
-    allowNull: false
-  },
   task_id: {
     type: Sequelize.BIGINT(20),
     allowNull: false

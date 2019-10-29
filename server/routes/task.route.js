@@ -1,6 +1,8 @@
 const taskController = require('../controllers/task.controller')
 const authorController = require('../controllers/auth.controller')
 const todoController = require('../controllers/todo.controller')
+const mediaController = require('../controllers/media.controller')
+const upload = require('../lib/upload')
 
 const express = require('express')
 const router = express.Router()
@@ -29,6 +31,12 @@ router.route('/:taskId/user')
 
   /** POST api/task/:taskId/user - Manage user task */
   .post(authorController.validate, taskController.manageUserTask)
+
+router.route('/:taskId/media')
+  /** POST api/task/:taskId/media - add media */
+  .post(authorController.validate, upload.taskMedia, mediaController.addMedia)
+  /** GET api/task/:taskId/media - list all media in system, can filter */
+  .get(authorController.validate, mediaController.listMedia)
 
 router.route('/:taskId/label')
   /** GET api/task/:taskId/labels - Get labels of task */

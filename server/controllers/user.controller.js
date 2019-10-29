@@ -236,11 +236,9 @@ class UserController {
         project_id: Joi.number().optional(),
         role: Joi.string().optional(),
         sort: Joi.string().optional().default('createdAt'),
-        direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
-        .default('ASC'),
+        direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC']).default('ASC'),
         page: Joi.number().optional().min(1).default(1),
-        offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET)
-        .default(30),
+        offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET).default(30),
         is_active: Joi.boolean().optional()
       })
 
