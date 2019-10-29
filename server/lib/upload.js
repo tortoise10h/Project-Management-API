@@ -79,6 +79,33 @@ const filter = {
       return cb(new Error('Only .png .jpg .jpeg .svg files are allowed'), false)
     }
     return cb(null, true)
+  },
+  media: (req, file, cb) => {
+    const allowTypes = [
+      /** Document */
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/zip',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/x-rar-compressed',
+      'text/plain',
+      /** Video */
+      'video/mp4',
+      'application/mp4',
+      /** Image */
+      'image/png',
+      'image/jpeg',
+      'image/svg+xml',
+      /** Excel */
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ]
+    if (!allowTypes.includes(file.mimetype)) {
+      return cb(new Error('File type is not allowed'), false)
+    }
+    return cb(null, true)
   }
 }
 
@@ -96,6 +123,28 @@ upload.userAvatar = (req, res, next) => {
   })
   const userAvatarUpload = multer({ storage, fileFilter: filter.image }).single('avatar')
   userAvatarUpload(req, res, (error) => {
+    if (error instanceof multer.MulterError) return next(error)
+    if (error) return next(error)
+    return next()
+  })
+}
+
+/** Task media */
+upload.taskMedia = (req, res, next) => {
+  const location = `${baseLocation}/task/media`
+  util.createFolder(location)
+  const storage = multer.diskStorage({
+    destination: (_req, _file, _cb) => {
+      if (_file.fieldname === 'media') {
+        _cb(null, location)
+      }
+    },
+    filename: (_req, _file, _cb) => {
+      _cb(null, `${moment.utc().format('YYYYMMDDhhmmss')}_${_file.originalname}`)
+    }
+  })
+  const taskMediaUpload = multer({ storage, fileFilter: filter.media, limits: { fileSize: 52428800 } }).single('media')
+  taskMediaUpload(req, res, (error) => {
     if (error instanceof multer.MulterError) return next(error)
     if (error) return next(error)
     return next()
