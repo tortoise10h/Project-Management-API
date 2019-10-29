@@ -5,6 +5,8 @@ const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
+const logController = require('./log.controller')
+const { logUpdate } = require('../lib/log-message')
 
 class ColumnController {
   async addColumn (req, res, next) {
@@ -38,6 +40,13 @@ class ColumnController {
 
       /** Create new label */
       const createColumn = await Column.create({ ...newColumnInfo })
+      /** Log user activity */
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} created new column "${createColumn.title}"`,
+        project.id
+      )
       return apiResponse.success(res, createColumn)
     } catch (error) {
       return next(error)
@@ -98,6 +107,13 @@ class ColumnController {
 
       /** Update column info */
       const updatedColumn = await column.update({ ...validater.value })
+      const logMessage = logUpdate(validater.value, column)
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.UPDATE,
+        `${req.author.name} updated column: ${logMessage}`,
+        updatedColumn.project_id
+      )
 
       /** Return new column update info */
       return apiResponse.success(res, updatedColumn)

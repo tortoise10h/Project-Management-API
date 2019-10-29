@@ -5,6 +5,8 @@ const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
+const logController = require('./log.controller')
+const { logUpdate, logAddMany } = require('../lib/log-message')
 
 class TodoController {
   async addTodo (req, res, next) {
@@ -19,13 +21,29 @@ class TodoController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      const Todo = modelFactory.getModel(constant.DB_MODEL.TODO)
+      const { Todo, Task, Column } = modelFactory.getAllModels()
       const newTodoInfo = { ...validater.value }
       newTodoInfo.created_by = author.id
       newTodoInfo.task_id = task.id
 
       /** Create new todo */
       const todo = await Todo.create({ ...newTodoInfo })
+      /** Get task include column info for log purpose */
+      const taskInfo = await Task.findByPk(task.id, {
+        attributes: ['id', 'title'],
+        include: {
+          model: Column,
+          attributes: ['id', 'project_id']
+        }
+      })
+
+      /** Log user activity */
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} created new to do "${todo.title}"`,
+        taskInfo.Column.project_id
+      )
       return apiResponse.success(res, todo)
     } catch (error) {
       return next(error)
@@ -60,7 +78,7 @@ class TodoController {
 
   async updateTodo (req, res, next) {
     try {
-      const { todo } = req
+      const { todo, author } = req
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
@@ -71,9 +89,27 @@ class TodoController {
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const { Column, Task } = modelFactory.getAllModels()
 
       /** Update todo info */
       const updatedTodo = await todo.update({ ...validater.value })
+      /** Get task include column info for log purpose */
+      const taskInfo = await Task.findByPk(todo.task_id, {
+        attributes: ['id', 'title'],
+        include: {
+          model: Column,
+          attributes: ['id', 'project_id']
+        }
+      })
+
+      /** Update column info */
+      const logMessage = logUpdate(validater.value, todo)
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.UPDATE,
+        `${req.author.name} updated todo: ${logMessage}`,
+        taskInfo.Column.project_id
+      )
 
       /** Return new todo info */
       return apiResponse.success(res, updatedTodo)
