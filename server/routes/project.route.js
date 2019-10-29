@@ -21,6 +21,10 @@ router.route('/:projectId')
   /** GET /api/project/:projectId - get project by id */
   .get(authorController.validate, projectController.getProject)
 
+router.route('/:projectId/user-not-in-project')
+  /** GET /api/project/:projectId/user-not-in-project - get user not in project */
+  .get(authorController.validate, userController.listUserNotInProject)
+
 router.route('/:projectId/user-in-project')
   /** GET /api/project/:projectId/user-in-project - get user in project */
   .get(authorController.validate, userController.getUserProject)

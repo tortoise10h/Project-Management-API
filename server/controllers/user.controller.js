@@ -52,7 +52,7 @@ const processAddUsersToProject = async (project, invitationMessage, newUserIds, 
       })
 
       /** Send mail to announce new user */
-      await sendMail(
+      sendMail(
         'addedUserToProject',
         {
           authorName: author.name,
@@ -85,10 +85,10 @@ class UserController {
         profile_title: Joi.string().optional(),
         sort: Joi.string().optional().default('name'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
-        .default('ASC'),
+          .default('ASC'),
         page: Joi.number().optional().min(1).default(1),
         offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET)
-        .default(constant.SERVER.API_DEFAULT_OFFSET),
+          .default(constant.SERVER.API_DEFAULT_OFFSET),
         is_active: Joi.boolean().optional()
       })
 
@@ -119,6 +119,78 @@ class UserController {
       const User = modelFactory.getModel(constant.DB_MODEL.USER)
       const users = await User.findAndCountAll({
         where: { ...filter, is_deleted: false },
+        order: [[sort, direction]],
+        attributes: {
+          exclude: [...constant.UNNECESSARY_FIELDS, 'password']
+        },
+        offset: queryOffset,
+        limit: queryLimit
+      })
+
+      return apiResponse.success(res, util.paginate(users, page, offset))
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async listUserNotInProject (req, res, next) {
+    try {
+      const schema = Joi.object().keys({
+        name: Joi.string().optional(),
+        email: Joi.string().optional(),
+        phone: Joi.string().optional(),
+        birthday: Joi.date().optional(),
+        address: Joi.string().optional(),
+        profile_title: Joi.string().optional(),
+        sort: Joi.string().optional().default('name'),
+        direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
+          .default('ASC'),
+        page: Joi.number().optional().min(1).default(1),
+        offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET)
+          .default(constant.SERVER.API_DEFAULT_OFFSET),
+        is_active: Joi.boolean().optional()
+      })
+
+      /** Validate input */
+      const validater = Joi.validate(req.query, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const {
+        sort, direction, page, offset
+      } = validater.value
+
+      const { User, UserProject } = modelFactory.getAllModels()
+      const { project } = req
+
+      /** Map search */
+      const filter = {}
+      Object.keys(validater.value).forEach((key) => {
+        if (!['sort', 'direction', 'page', 'offset'].includes(key)) {
+          switch (typeof validater.value[key]) {
+            case 'string':
+              filter[key] = { [Op.like]: `%${validater.value[key]}%` }
+              break
+            default:
+              break
+          }
+        }
+      })
+
+      /** Get list user in project */
+      const userInProject = await UserProject.findAll({
+        where: { project_id: project.id, is_deleted: false },
+        attributes: ['id', 'user_id']
+      })
+      const userInProjectIds = userInProject.map(value => value.user_id)
+
+      /** Get list of customer */
+      const queryOffset = (page - 1) * offset
+      const queryLimit = offset
+      const users = await User.findAndCountAll({
+        where: {
+          ...filter,
+          is_deleted: false,
+          id: { [Op.notIn]: userInProjectIds }
+        },
         order: [[sort, direction]],
         attributes: {
           exclude: [...constant.UNNECESSARY_FIELDS, 'password']
