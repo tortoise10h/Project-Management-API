@@ -88,7 +88,7 @@ class ProjectController {
         include: [{
           model: User,
           attributes: {
-            exclude: [...constant.UNNECESSARY_FIELDS, 'password', 'phone']
+            exclude: [...constant.UNNECESSARY_FIELDS, 'password']
           }
         }]
       })

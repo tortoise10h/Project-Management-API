@@ -337,7 +337,7 @@ class UserController {
       /** Validate input */
       const schema = Joi.object().keys({
         name: Joi.string().optional().max(255),
-        phone: Joi.string().optional().max(40),
+        phone: Joi.number().optional(),
         email: Joi.string().optional().email({ minDomainSegments: 2 }),
         password: Joi.string().optional().min(8).max(60),
         summary: Joi.string().optional(),
