@@ -1,20 +1,20 @@
-# Project-Management-API
+# Banana Project Management API Repo
 
-## Requiment
+## Môi trường yêu cầu
 
 - Nodejs v8.11.4 hoặc mới hơn.
 - MariaDB v10.1 hoặc mới hơn.
 
-## Installation
+## Cài đặt
 
-- Clone source từ Github, có thể dùng https hoặc with ssh.
+- Clone source từ Github, có thể dùng https hoặc ssh tùy sở thích.
 - Tạo file `.env` bằng cách copy file `.env.example` sửa tên file thành `.env`. Đây là file chứa các biến môi trường để chạy source
 - Sửa các giá trị trong file `.env` phù hợp với config máy
-- Sau đó npm install
-- Tạo database với tên là `banana-project-management`
-- npm start hoặc npm run dev
+- Sau đó `npm install` hoặc`yarn`
+- Tạo database với tên là `banana-project-management`và charset là `utf8-general-ci`
+- `npm start` hoặc `npm run dev` để chạy server
 
-## GIT NOTE
+## Nhắc nhở nhỏ về Git
 
 1. Cập nhật source code trên local sao cho mới nhất tại branch chính, hiện tại là `develop`.
 
@@ -52,15 +52,9 @@ git push -u origin new_feature_name
 
 8. Sau khi kiểm tra đã đúng, click vào `Create new pull request`.
 
-9. Assign & liên hệ **Huy** để review cái pull request này, đồng thời source code nên check out về lại branch chính.
+9. Copy link pull request bỏ vào task trên **trello** & thông báo lên group để review cái pull request này, đồng thời source code nên check out về lại branch chính.
 
 ```Git command
 git checkout develop
 ```
-
----
-**NOTE**
-
-Nếu trong quá trình pull source code về mà có conflict thì, có thể liên hệ Huy
----
 
