@@ -23,9 +23,19 @@ router.route('/:taskId/todo')
   /** GET api/task/:taskId/todo - list all todo in system, can filter */
   .get(authorController.validate, todoController.listTodo)
 
+router.route('/:taskId/user')
+  /** GET api/task/:taskId/user - Get users of task */
+  .get(authorController.validate, taskController.getUsersOfTask)
+
+  /** POST api/task/:taskId/user - Manage user task */
+  .post(authorController.validate, taskController.manageUserTask)
+
 router.route('/:taskId/label')
-  /** POST api/task/:taskId/label - add task label */
-  .post(authorController.validate, taskController.addTaskLabel)
+  /** GET api/task/:taskId/labels - Get labels of task */
+  .get(authorController.validate, taskController.getLabelsOfTask)
+
+  /** POST api/task/:taskId/label - Manage task label */
+  .post(authorController.validate, taskController.manageTaskLabel)
 
 router.param('taskId', taskController.loadTask)
 

@@ -142,6 +142,122 @@ class TaskController {
     }
   }
 
+  async getUsersOfTask (req, res, next) {
+    try {
+      const { task } = req
+      const {
+        UserTask,
+        Column,
+        Project,
+        User,
+        UserProject
+      } = modelFactory.getAllModels()
+      /** Get column of task to get project id to validate only get user in project */
+      const columnInfo = await Column.findByPk(task.column_id, {
+        include: [{
+          model: Project,
+          attributes: ['id']
+        }],
+        attributes: ['id']
+      })
+
+      /** Get all user of project
+       * include UserTask to check they are in task or not
+       * include UserProject to make sure only get users in project
+      */
+      let users = await User.findAll({
+        where: {
+          is_deleted: false
+        },
+        attributes: {
+          exclude: [...constant.UNNECESSARY_FIELDS, 'password']
+        },
+        include: [
+          {
+            model: UserTask,
+            attributes: ['id', 'user_id'],
+            where: { task_id: task.id },
+            required: false
+          },
+          {
+            model: UserProject,
+            attributes: ['id', 'user_id'],
+            where: { project_id: columnInfo.Project.id },
+            required: true
+          }
+        ]
+      })
+
+      users = users.map((user) => {
+        user = user.toJSON()
+        user.is_in_task = false
+        if (user.UserTasks.length > 0) {
+          user.is_in_task = true
+        }
+        return user
+      })
+
+      return apiResponse.success(res, users)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async getLabelsOfTask (req, res, next) {
+    try {
+      const { task } = req
+      const {
+        TaskLabel,
+        Column,
+        Project,
+        Label,
+        UserProject
+      } = modelFactory.getAllModels()
+      /** Get column of task to get project id to check what labels are in project */
+      const columnInfo = await Column.findByPk(task.column_id, {
+        include: [{
+          model: Project,
+          attributes: ['id']
+        }],
+        attributes: ['id']
+      })
+
+      /** Get all label of project
+       * include TaskLabel to check label is in task or not
+      */
+      let labels = await Label.findAll({
+        where: {
+          is_deleted: false,
+          project_id: columnInfo.Project.id
+        },
+        attributes: {
+          exclude: constant.UNNECESSARY_FIELDS
+        },
+        include: [
+          {
+            model: TaskLabel,
+            attributes: ['id', 'label_id'],
+            where: { task_id: task.id },
+            required: false
+          }
+        ]
+      })
+
+      labels = labels.map((label) => {
+        label = label.toJSON()
+        label.is_in_task = false
+        if (label.UserTasks.length > 0) {
+          label.is_in_task = true
+        }
+        return label
+      })
+
+      return apiResponse.success(res, labels)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
   async addTask (req, res, next) {
     try {
       const schema = Joi.object().keys({
@@ -385,37 +501,112 @@ class TaskController {
     }
   }
 
-  async addTaskLabel (req, res, next) {
+  async manageTaskLabel (req, res, next) {
     try {
       const { task } = req
       const schema = Joi.object().keys({
-        label_id: Joi.number().optional()
+        label_id: Joi.number().min(1).required(),
+        is_in_task: Joi.boolean().required()
       })
 
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      const { label_id: labelId } = validater.value
+      const { label_id: labelId, is_in_task: isInTask } = validater.value
 
       /** Validate duplicate label */
-      const Label = modelFactory.getModel(constant.DB_MODEL.LABEL)
-      const labelInfo = await Label.findByPk(labelId)
-      if (!labelInfo) return next(new APIError('Label not found'), httpStatus.BAD_REQUEST)
-      const TaskLabel = modelFactory.getModel(constant.DB_MODEL.TASK_LABEL)
-      const taskLabelInfo = await TaskLabel.findOne({
-        where: {
-          task_id: task.id,
-          label_id: labelId
-        }
-      })
-      if (taskLabelInfo) return next(new APIError('Label is already existed in task'), httpStatus.BAD_REQUEST)
+      const { Label, TaskLabel } = modelFactory.getAllModels()
 
-      /** Create new task label */
-      const newTaskLabelInfo = { ...validater.value }
-      newTaskLabelInfo.task_id = task.id
-      const taskLabel = await TaskLabel.create({ ...newTaskLabelInfo })
-      return apiResponse.success(res, taskLabel)
+      /** Validate exists label */
+      const labelInfo = await Label.findByPk(labelId)
+      if (!labelInfo || labelInfo.is_deleted) return next(new APIError('Label not found', httpStatus.BAD_REQUEST))
+
+      /** if isInTask = true => create new task label
+       * isInTask = false => destroy task label
+      */
+      let result
+      if (isInTask) {
+        /** If option is create new task then check if label is already exists in task or not */
+        const taskLabelInfo = await TaskLabel.findOne({
+          where: {
+            task_id: task.id,
+            label_id: labelId
+          }
+        })
+        if (taskLabelInfo) return next(new APIError('Label is already existed in task', httpStatus.BAD_REQUEST))
+
+        /** prepare required info of new task label and create */
+        const newTaskLabelInfo = { ...validater.value }
+        newTaskLabelInfo.task_id = task.id
+        result = await TaskLabel.create({ ...newTaskLabelInfo })
+      } else {
+        /** Option is remove task label */
+        await TaskLabel.destroy({
+          where: {
+            task_id: task.id,
+            label_id: labelId
+          }
+        })
+        result = { is_deleted: true }
+      }
+      return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async manageUserTask (req, res, next) {
+    try {
+      const { task, author } = req
+      const schema = Joi.object().keys({
+        user_id: Joi.number().min(1).required(),
+        is_in_task: Joi.boolean().required()
+      })
+
+      /** Validate input */
+      const validater = Joi.validate(req.body, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+
+      const { user_id: userId, is_in_task: isInTask } = validater.value
+
+      /** Validate duplicate label */
+      const { User, UserTask } = modelFactory.getAllModels()
+
+      /** Validate exists user */
+      const userInfo = await User.findByPk(userId)
+      if (!userInfo || userInfo.is_deleted) return next(new APIError('User not found', httpStatus.BAD_REQUEST))
+
+      /** if isInTask = true => create new user task
+       * isInTask = false => destroy user task
+      */
+      let result
+      if (isInTask) {
+        /** If option is create new user task then check if user is already exists in task or not */
+        const userTaskInfo = await UserTask.findOne({
+          where: {
+            task_id: task.id,
+            user_id: userId
+          }
+        })
+        if (userTaskInfo) return next(new APIError('User is already existed in task', httpStatus.BAD_REQUEST))
+
+        /** prepare required info of new user task and create */
+        const newUserTaskInfo = { ...validater.value }
+        newUserTaskInfo.task_id = task.id
+        newUserTaskInfo.added_by = author.id
+        result = await UserTask.create({ ...newUserTaskInfo })
+      } else {
+        /** Option is remove user task */
+        await UserTask.destroy({
+          where: {
+            task_id: task.id,
+            user_id: userId
+          }
+        })
+        result = { is_deleted: true }
+      }
+      return apiResponse.success(res, result)
     } catch (error) {
       return next(error)
     }
