@@ -210,8 +210,7 @@ class TaskController {
         TaskLabel,
         Column,
         Project,
-        Label,
-        UserProject
+        Label
       } = modelFactory.getAllModels()
       /** Get column of task to get project id to check what labels are in project */
       const columnInfo = await Column.findByPk(task.column_id, {
@@ -246,7 +245,7 @@ class TaskController {
       labels = labels.map((label) => {
         label = label.toJSON()
         label.is_in_task = false
-        if (label.UserTasks.length > 0) {
+        if (label.TaskLabels.length > 0) {
           label.is_in_task = true
         }
         return label
