@@ -691,11 +691,6 @@ class TaskController {
             model: UserProject,
             required: true,
             where: { project_id: columnInfo.project_id }
-          },
-          {
-            model: UserTask,
-            required: true,
-            where: { task_id: task.id }
           }
         ]
       })
