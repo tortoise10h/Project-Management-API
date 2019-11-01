@@ -39,6 +39,11 @@ const constant = {
     LEADER: 'Leader',
     MEMBER: 'Member'
   },
+  TIME_UNIT: {
+    DAY: 'Day',
+    HOUR: 'Hour',
+    MINUTE: 'Minute'
+  },
   JWT_SECRET: '$banana-project-management-api-jwt-secret$',
   JWT_EXPIRE_TIME: 60 * 60,
   DB_MODEL: {

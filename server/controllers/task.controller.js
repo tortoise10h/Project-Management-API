@@ -82,6 +82,10 @@ class TaskController {
         description: Joi.string().optional(),
         column_id: Joi.string().optional(),
         due_date: Joi.date().optional(),
+        estimated_time: Joi.number().optional().min(1),
+        estimated_time_unit: Joi.string().optional(),
+        spent_time: Joi.number().optional(),
+        spent_time_unit: Joi.string().optional(),
         sort: Joi.string().optional().default('title'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
           .default('ASC'),
@@ -344,6 +348,10 @@ class TaskController {
         title: Joi.string().optional().max(255),
         description: Joi.string().optional(),
         column_id: Joi.number().optional().min(1),
+        estimated_time: Joi.number().optional(),
+        estimated_time_unit: Joi.string().optional().valid([constant.TIME_UNIT.DAY, constant.TIME_UNIT.HOUR, constant.TIME_UNIT.MINUTE]),
+        spent_time: Joi.number().optional(),
+        spent_time_unit: Joi.string().optional().valid([constant.TIME_UNIT.DAY, constant.TIME_UNIT.HOUR, constant.TIME_UNIT.MINUTE]),
         due_date: Joi.date().optional(),
         index: Joi.number().optional()
       })
@@ -353,6 +361,20 @@ class TaskController {
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
       const { column_id: columnId } = validater.value
       const Column = modelFactory.getModel(constant.DB_MODEL.COLUMN)
+
+      /** Validate time must have a unit */
+      const {
+        estimated_time: estimatedTime,
+        estimated_time_unit: estimatedTimeUnit,
+        spent_time: spentTime,
+        spent_time_unit: spentTimeUnit
+      } = validater.value
+
+      const Task = modelFactory.getModel(constant.DB_MODEL.TASK)
+      const taskInfo = await Task.findByPk(task.id)
+
+      if (estimatedTime && (_.isEmpty(taskInfo.estimated_time_unit) && _.isEmpty(estimatedTimeUnit))) return next(new APIError('Time must have a unit'), httpStatus.BAD_REQUEST)
+      if (spentTime && (_.isEmpty(taskInfo.spent_time_unit) && _.isEmpty(spentTimeUnit))) return next(new APIError('Time must have a unit'), httpStatus.BAD_REQUEST)
 
       /** Update task info */
       const updatedTask = await task.update({ ...validater.value })
