@@ -26,6 +26,22 @@ const schema = {
     type: Sequelize.TEXT,
     allowNull: true
   },
+  estimated_time: {
+    type: Sequelize.BIGINT(20),
+    allowNull: true
+  },
+  estimated_time_unit: {
+    type: Sequelize.STRING(10),
+    allowNull: true
+  },
+  spent_time: {
+    type: Sequelize.BIGINT(20),
+    allowNull: true
+  },
+  spent_time_unit: {
+    type: Sequelize.STRING(10),
+    allowNull: true
+  },
   due_date: {
     type: Sequelize.DATE
   },
