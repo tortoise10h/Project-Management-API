@@ -381,7 +381,7 @@ class TaskController {
     }
   }
 
-  async addUserToTask (req, res, next) {
+  async addUsersToTask (req, res, next) {
     try {
       const schema = Joi.object().keys({
         user_ids: Joi.array().required().items(Joi.number()).min(1)
