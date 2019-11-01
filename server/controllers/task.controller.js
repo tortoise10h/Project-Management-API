@@ -10,7 +10,11 @@ const { logUpdate, logAddMany } = require('../lib/log-message')
 const { Op } = require('sequelize')
 
 const processAddUsersToTask = async (task, userIds, author) => {
-  const { UserTask, User } = modelFactory.getAllModels()
+  const { UserTask, User, UserProject, Column } = modelFactory.getAllModels()
+  /** Get column info to know the project of task */
+  const columnInfo = await Column.findByPk(task.column_id, {
+    attributes: ['project_id']
+  })
   const addSingleUserToTask = userId => new Promise(async (resolve) => {
     try {
       /** validate if user already in task */
@@ -20,10 +24,16 @@ const processAddUsersToTask = async (task, userIds, author) => {
           user_id: userId
         }
       })
-      if (oldUserTask) return resolve({ field: 'userId', value: userId, message: 'User is already in this task' })
+      if (oldUserTask) return resolve([{ field: 'userId', value: userId, message: 'User is already in this task' }])
       /** Validate user is valid */
-      const userInfo = await User.findByPk(userId)
-      if (!userInfo || userInfo.is_deleted) return resolve({ field: 'userId', value: userId, message: 'User is not valid' })
+      const userInfo = await User.findByPk(userId, {
+        include: [{
+          model: UserProject,
+          required: true,
+          where: { project_id: columnInfo.project_id }
+        }]
+      })
+      if (!userInfo || userInfo.is_deleted) return resolve([{ field: 'userId', value: userId, message: 'User is not valid' }])
 
       /** Add user to task */
       const newUserTask = await UserTask.create({
@@ -408,13 +418,16 @@ class TaskController {
         attributes: ['project_id']
       })
       /** Log user activity */
-      const logMessage = logAddMany(successList, 'name')
-      await logController.logActivity(
-        author,
-        constant.LOG_ACTION.ADD,
-        `${author.name} added: ${logMessage} to task`,
-        columnInfo.project_id
-      )
+      if (successList.length > 0) {
+        console.log('============> Huy Debugs :>: TaskController -> addUsersToTask -> successList', successList)
+        const logMessage = logAddMany(successList, 'name')
+        await logController.logActivity(
+          author,
+          constant.LOG_ACTION.ADD,
+          `${author.name} added: ${logMessage} to task`,
+          columnInfo.project_id
+        )
+      }
 
       return apiResponse.success(res, { success_list: successList, failed_list: failedList })
     } catch (error) {
@@ -606,6 +619,88 @@ class TaskController {
         result = { is_deleted: true }
       }
       return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async listUsersNotInTask (req, res, next) {
+    try {
+      const schema = Joi.object().keys({
+        name: Joi.string().optional(),
+        email: Joi.string().optional(),
+        phone: Joi.string().optional(),
+        birthday: Joi.date().optional(),
+        address: Joi.string().optional(),
+        profile_title: Joi.string().optional(),
+        sort: Joi.string().optional().default('name'),
+        direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
+          .default('ASC'),
+        is_active: Joi.boolean().optional()
+      })
+
+      /** Validate input */
+      const validater = Joi.validate(req.query, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const {
+        sort, direction
+      } = validater.value
+
+      const { User, UserTask, Column, UserProject } = modelFactory.getAllModels()
+      const { task } = req
+
+      /** Map search */
+      const filter = {}
+      Object.keys(validater.value).forEach((key) => {
+        if (!['sort', 'direction', 'page', 'offset'].includes(key)) {
+          switch (typeof validater.value[key]) {
+            case 'string':
+              filter[key] = { [Op.like]: `%${validater.value[key]}%` }
+              break
+            default:
+              break
+          }
+        }
+      })
+
+      /** Get list user in task */
+      const usersInTask = await UserTask.findAll({
+        where: { task_id: task.id, is_deleted: false },
+        attributes: ['id', 'user_id']
+      })
+      const userInTaskIds = usersInTask.map(value => value.user_id)
+
+      /** Get column info to know the project of task */
+      const columnInfo = await Column.findByPk(task.column_id, {
+        attributes: ['project_id']
+      })
+
+      /** Get list of user */
+      const users = await User.findAll({
+        where: {
+          ...filter,
+          is_deleted: false,
+          id: { [Op.notIn]: userInTaskIds }
+        },
+        order: [[sort, direction]],
+        attributes: {
+          exclude: [...constant.UNNECESSARY_FIELDS, 'password']
+        },
+        include: [
+          {
+            model: UserProject,
+            required: true,
+            where: { project_id: columnInfo.project_id }
+          },
+          {
+            model: UserTask,
+            required: true,
+            where: { task_id: task.id }
+          }
+        ]
+      })
+
+      return apiResponse.success(res, users)
     } catch (error) {
       return next(error)
     }

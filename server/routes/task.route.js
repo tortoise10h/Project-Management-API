@@ -25,6 +25,10 @@ router.route('/:taskId/todo')
   /** GET api/task/:taskId/todo - list all todo in system, can filter */
   .get(authorController.validate, todoController.listTodo)
 
+router.route('/:taskId/user-not-in')
+  /** GET api/task/:taskId/user-not-in - Get users not in task */
+  .get(authorController.validate, taskController.listUsersNotInTask)
+
 router.route('/:taskId/user')
   /** GET api/task/:taskId/user - Get users of task */
   .get(authorController.validate, taskController.getUsersOfTask)
