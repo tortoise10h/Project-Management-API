@@ -29,8 +29,11 @@ router.route('/:taskId/user')
   /** GET api/task/:taskId/user - Get users of task */
   .get(authorController.validate, taskController.getUsersOfTask)
 
-  /** POST api/task/:taskId/user - Manage user task */
-  .post(authorController.validate, taskController.manageUserTask)
+  /** POST api/task/:taskId/user - Add users to task */
+  .post(authorController.validate, taskController.addUsersToTask)
+
+  /** DELETE api/task/:taskId/user - Delete user from task */
+  .delete(authorController.validate, taskController.manageUserTask)
 
 router.route('/:taskId/media')
   /** POST api/task/:taskId/media - add media */
