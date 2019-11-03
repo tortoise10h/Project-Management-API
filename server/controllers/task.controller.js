@@ -305,12 +305,12 @@ class TaskController {
 
   async loadTask (req, res, next, taskId) {
     try {
+      const { Task, User, Label, Todo, Media } = modelFactory.getAllModels()
       /** Validate project id */
       const id = parseInt(taskId)
       if (_.isNaN(id)) return next(new APIError([{ field: 'taskId', value: taskId, message: 'Invalid task id' }], httpStatus.BAD_REQUEST))
 
       /** Validate existed */
-      const { Task, User } = modelFactory.getAllModels()
       const task = await Task.findByPk(id, {
         attributes: {
           exclude: constant.UNNECESSARY_FIELDS
@@ -318,6 +318,24 @@ class TaskController {
         include: [
           {
             model: User,
+            attributes: {
+              exclude: constant.UNNECESSARY_FIELDS
+            }
+          },
+          {
+            model: Label,
+            attributes: {
+              exclude: constant.UNNECESSARY_FIELDS
+            }
+          },
+          {
+            model: Todo,
+            attributes: {
+              exclude: constant.UNNECESSARY_FIELDS
+            }
+          },
+          {
+            model: Media,
             attributes: {
               exclude: constant.UNNECESSARY_FIELDS
             }
@@ -334,6 +352,15 @@ class TaskController {
 
   async getTask (req, res, next) {
     try {
+      const { UserProject } = modelFactory.getAllModels()
+      /** Validate user has to in project to do next */
+      const userInfo = await UserProject.findOne({
+        where: { user_id: req.author.id }
+      })
+
+      if (!userInfo || userInfo.is_deleted) {
+        return next(new APIError('You are not in this project', httpStatus.BAD_REQUEST))
+      }
       return apiResponse.success(res, req.task)
     } catch (error) {
       return next(error)

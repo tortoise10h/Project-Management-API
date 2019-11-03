@@ -16,8 +16,11 @@ router.route('/updateIndex')
   .put(authorController.validate, taskController.updateManyTaskIndex)
 
 router.route('/:taskId')
-  /** GET api/task - update task */
+  /** PUT api/task - update task */
   .put(authorController.validate, taskController.updateTask)
+
+  /** PUT api/task - get task */
+  .get(authorController.validate, taskController.getTask)
 
 router.route('/:taskId/todo')
   /** POST api/task/:taskId/todo - add todo */
