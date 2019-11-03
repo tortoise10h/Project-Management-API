@@ -6,6 +6,8 @@ const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
 const fs = require('fs')
+const logController = require('./log.controller')
+const { logUpdate } = require('../lib/log-message')
 
 class MediaController {
   async addMedia (req, res, next) {
@@ -24,7 +26,7 @@ class MediaController {
       const validater = Joi.validate({ title: mediaName }, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_GATEWAY))
 
-      const Media = modelFactory.getModel(constant.DB_MODEL.MEDIA)
+      const { Media, Task, Column } = modelFactory.getAllModels()
       const newMediaInfo = {
         ...validater.value,
         media_location: file.path,
@@ -34,6 +36,23 @@ class MediaController {
 
       /** Create new media */
       const media = await Media.create({ ...newMediaInfo })
+
+      /** Get task include column info for log purpose */
+      const taskInfo = await Task.findByPk(task.id, {
+        attributes: ['id', 'title'],
+        include: {
+          model: Column,
+          attributes: ['id', 'project_id']
+        }
+      })
+
+      /** Log user activity */
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.ADD,
+        `${author.name} created new media "${media.title}"`,
+        taskInfo.Column.project_id
+      )
       return apiResponse.success(res, media)
     } catch (error) {
       return next(error)
@@ -83,6 +102,8 @@ class MediaController {
 
       /** If has file sent => update media */
       if (file) {
+        const mediaName = file.originalname.slice(0, file.originalname.lastIndexOf('.'))
+        updateMediaInfo.title = mediaName
         updateMediaInfo.media_location = file.path
       }
 
@@ -90,6 +111,33 @@ class MediaController {
       if (updateMediaInfo.media_location && media.media_location) {
         fs.unlink(media.media_location, () => {})
       }
+
+      const { Column, Task } = modelFactory.getAllModels()
+      /** Get task include column info for log purpose */
+      const taskInfo = await Task.findByPk(media.task_id, {
+        attributes: ['id', 'title'],
+        include: {
+          model: Column,
+          attributes: ['id', 'project_id']
+        }
+      })
+
+      /** Log user activity */
+      const newMediaInfo = {
+        ...updateMediaInfo,
+        media_location: file.filename
+      }
+      const oldMediaInfo = {
+        title: media.title,
+        media_location: media.media_location.split('\\').pop().split('/').pop()
+      }
+      const logMessage = logUpdate(newMediaInfo, oldMediaInfo)
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.UPDATE,
+        `${req.author.name} updated media: ${logMessage}`,
+        taskInfo.Column.project_id
+      )
 
       /** Update media info */
       const updatedMedia = await media.update(updateMediaInfo)
