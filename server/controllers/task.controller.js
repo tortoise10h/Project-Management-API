@@ -82,7 +82,7 @@ class TaskController {
         description: Joi.string().optional(),
         column_id: Joi.string().optional(),
         due_date: Joi.date().optional(),
-        estimated_time: Joi.number().optional().min(1),
+        estimated_time: Joi.number().optional(),
         estimated_time_unit: Joi.string().optional(),
         spent_time: Joi.number().optional(),
         spent_time_unit: Joi.string().optional(),

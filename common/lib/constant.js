@@ -81,7 +81,9 @@ const constant = {
     status: 'Status',
     role: 'Role',
     color: 'Color',
-    due_date: 'Due date'
+    due_date: 'Due date',
+    media_location: 'File',
+    is_active: 'Is active'
   },
   MONTH_IN_YEAR: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   PROJECT_TIMEZONE: 'Asia/Ho_Chi_Minh'
