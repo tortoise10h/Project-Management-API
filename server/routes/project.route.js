@@ -2,6 +2,7 @@ const projectController = require('../controllers/project.controller')
 const authorController = require('../controllers/auth.controller')
 const labelController = require('../controllers/label.controller')
 const columnController = require('../controllers/column.controller')
+const logController = require('../controllers/log.controller')
 
 const userController = require('../controllers/user.controller')
 
@@ -20,6 +21,10 @@ router.route('/:projectId')
   .put(authorController.validate, projectController.updateProject)
   /** GET /api/project/:projectId - get project by id */
   .get(authorController.validate, projectController.getProject)
+
+router.route('/:projectId/log')
+  /** GET api/project/:projectId/log - get log of project */
+  .get(authorController.validate, logController.log.listLog)
 
 router.route('/:projectId/user-not-in-project')
   /** GET /api/project/:projectId/user-not-in-project - get user not in project */
