@@ -40,6 +40,8 @@ class LogController {
         is_active: Joi.boolean().optional(),
         sort: Joi.string().optional().default('createdAt'),
         date: Joi.date().optional(),
+        from_date: Joi.date().optional(),
+        to_date: Joi.date().optional(),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
           .default('ASC'),
         page: Joi.number().optional().min(1).default(1),
@@ -51,15 +53,16 @@ class LogController {
       const validater = Joi.validate(req.query, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
       const {
-        sort, direction, page, offset
+        sort, direction, page, offset,
+        from_date: fromDate, to_date: toDate
       } = validater.value
-      const { author, project } = req
+      const { project } = req
       const { Log, Project } = modelFactory.getAllModels()
 
       /** Map search */
       const filter = {}
       Object.keys(validater.value).forEach((key) => {
-        if (!['sort', 'direction', 'page', 'offset', 'date'].includes(key)) {
+        if (!['sort', 'direction', 'page', 'offset', 'date', 'from_date', 'to_date'].includes(key)) {
           switch (typeof validater.value[key]) {
             case 'string':
               filter[key] = { [Op.like]: `%${validater.value[key]}%` }
@@ -92,6 +95,16 @@ class LogController {
       /** Get list of logs */
       const queryOffset = (page - 1) * offset
       const queryLimit = offset
+
+      /** For filter date */
+      if (fromDate && !toDate) {
+        filter.time_logged = { [Op.gt]: moment(fromDate) }
+      } else if (!fromDate && toDate) {
+        filter.time_logged = { [Op.lt]: moment(toDate) }
+      } else if (fromDate && toDate) {
+        filter.time_logged = { [Op.between]: [moment(fromDate), moment(toDate)] }
+      }
+
       const logs = await Log.findAndCountAll({
         where: { ...filter, is_deleted: false },
         order: [[sort, direction]],
