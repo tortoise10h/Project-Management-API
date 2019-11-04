@@ -12,8 +12,7 @@ class TodoController {
   async addTodo (req, res, next) {
     try {
       const schema = Joi.object().keys({
-        title: Joi.string().required().max(255),
-        description: Joi.string().optional()
+        title: Joi.string().required().max(255)
       })
       const { author, task } = req
 
@@ -82,8 +81,7 @@ class TodoController {
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        description: Joi.string().optional(),
-        status: Joi.string().optional().max(255)
+        status: Joi.boolean().optional().max(255)
       })
 
       /** Validate input */
@@ -122,8 +120,7 @@ class TodoController {
     try {
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        description: Joi.string().optional(),
-        status: Joi.string().optional().max(255),
+        status: Joi.boolean().optional().max(255),
         task_id: Joi.number().optional(),
         created_by: Joi.number().optional(),
         is_active: Joi.boolean().optional(),

@@ -22,12 +22,6 @@ const constant = {
     APPROVE_ENQUIRY: 'ApproveEnquiry',
     DESCLINE_ENQUIRY: 'DesclineEnquiry'
   },
-  TODO_STATUS: {
-    NEW: 'New',
-    PROCESSING: 'Processing',
-    DONE: 'Done',
-    CANCEL: 'Cancel'
-  },
   PROJECT_STATUS: {
     NEW: 'New',
     PROCESSING: 'Processing',

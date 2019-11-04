@@ -14,18 +14,14 @@ const schema = {
     type: Sequelize.STRING(255),
     allowNull: false
   },
-  description: {
-    type: Sequelize.TEXT,
-    allowNull: true
-  },
   task_id: {
     type: Sequelize.BIGINT(20),
     allowNull: false
   },
   status: {
-    type: Sequelize.STRING(100),
+    type: Sequelize.BOOLEAN,
     allowNull: false,
-    defaultValue: constant.TODO_STATUS.NEW
+    defaultValue: false
   },
   created_by: {
     type: Sequelize.BIGINT(20),
