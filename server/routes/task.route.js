@@ -25,8 +25,13 @@ router.route('/:taskId')
 router.route('/:taskId/todo')
   /** POST api/task/:taskId/todo - add todo */
   .post(authorController.validate, todoController.addTodo)
+
   /** GET api/task/:taskId/todo - list all todo in system, can filter */
   .get(authorController.validate, todoController.listTodo)
+
+router.route('/:taskId/todo-status')
+  /** POST api/task/:taskId/todo-status - check list todo */
+  .post(authorController.validate, todoController.checkListTodo)
 
 router.route('/:taskId/user-not-in')
   /** GET api/task/:taskId/user-not-in - Get users not in task */
