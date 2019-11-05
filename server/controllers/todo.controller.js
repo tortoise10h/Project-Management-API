@@ -177,6 +177,91 @@ class TodoController {
       return next(error)
     }
   }
+
+  async checkListTodo (req, res, next) {
+    try {
+      const schema = Joi.object().keys({
+        todo_ids: Joi.array().required().items(Joi.number()).min(1)
+      })
+
+      /** Validate input */
+      const validater = Joi.validate(req.body, schema, { abortEarly: false })
+      if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const {
+        todo_ids: todoIds
+      } = validater.value
+      const { task } = req
+      const { Todo, UserProject, Column, Task } = modelFactory.getAllModels()
+
+      /** Validate user has to in project to check todo */
+      const taskInfo = await Task.findOne({
+        where: { id: task.id },
+        attributes: ['id'],
+        include: [{
+          model: Column,
+          attributes: ['id', 'project_id']
+        }]
+      })
+
+      const userProjectInfo = await UserProject.findOne({ where: { project_id: taskInfo.Column.project_id } })
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project', httpStatus.BAD_REQUEST))
+      }
+
+      await Todo.update(
+        {
+          status: false
+        },
+        {
+          where: {
+            task_id: task.id
+          }
+        }
+      )
+      /** Change to do in todoIds to true */
+      await Todo.update(
+        {
+          status: true
+        },
+        {
+          where: {
+            task_id: task.id,
+            id: { [Op.in]: todoIds }
+          }
+        }
+      )
+
+      return apiResponse.success(res, { success: true })
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async deleteTodo (req, res, next) {
+    try {
+      const { todo } = req
+      const { Task, UserProject, Column } = modelFactory.getAllModels()
+      /** Validate user has to in project to check todo */
+      const taskInfo = await Task.findOne({
+        where: { id: todo.task_id },
+        attributes: ['id'],
+        include: [{
+          model: Column,
+          attributes: ['id', 'project_id']
+        }]
+      })
+
+      const userProjectInfo = await UserProject.findOne({ where: { project_id: taskInfo.Column.project_id } })
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project', httpStatus.BAD_REQUEST))
+      }
+      /** Delete todo */
+      const result = await todo.update({ is_deleted: true })
+      return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
 }
 
 module.exports = new TodoController()
