@@ -249,45 +249,6 @@ class AuthController {
     }
   }
 
-  permit (...allowed) {
-    /** Create function sastify user valid or not follow by role is passed to "...allowed" */
-    const isAllowed = (role = '') => allowed.indexOf(role.toLowerCase()) > -1
-    return async (req, res, next) => {
-      try {
-        /** Check user token valid format or exists */
-        let token = req.headers['x-access-token'] || req.headers.authorization
-        if (!token) return next(new APIError('Missing token', httpStatus.UNAUTHORIZED))
-        if (!token.startsWith('Bearer ')) return next(new APIError('Invalid token format', httpStatus.UNAUTHORIZED))
-        token = token.slice(7, token.length)
-
-        /** Verify user token */
-        let decoded
-        try {
-          decoded = jwt.verify(token, constant.JWT_SECRET)
-        } catch (err) {
-          logger.error(`[Server] Authentication::refresh::verify: ${err.message}`)
-          return next(new APIError('Token validation error', httpStatus.UNAUTHORIZED))
-        }
-
-        const { id, role } = decoded
-
-        const User = modelFactory.getModel(constant.DB_MODEL.USER)
-        const user = await User.findByPk(id)
-
-        /** Validate valid user */
-        if (!user.confirmed) return next(new APIError('User is not verified', httpStatus.UNAUTHORIZED))
-        if (!user.is_active) return next(new APIError('User is banned', httpStatus.UNAUTHORIZED))
-        if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.UNAUTHORIZED))
-
-        if (isAllowed(role)) { req.author = decoded; return next() }
-
-        return next(new APIError('Permision denied', httpStatus.FORBIDDEN))
-      } catch (error) {
-        return next(error)
-      }
-    }
-  }
-
   async forgotPassword (req, res, next) {
     try {
       const schema = Joi.object().keys({

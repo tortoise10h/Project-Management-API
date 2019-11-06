@@ -16,11 +16,14 @@ router.route('/updateIndex')
   .put(authorController.validate, taskController.updateManyTaskIndex)
 
 router.route('/:taskId')
-  /** PUT api/task - update task */
+  /** PUT api/task/:taskId - update task */
   .put(authorController.validate, taskController.updateTask)
 
-  /** PUT api/task - get task */
+  /** PUT api/task/:taskId - get task */
   .get(authorController.validate, taskController.getTask)
+
+  /** DELETE api/task/:taskId - delete task */
+  .delete(authorController.validate, taskController.deleteTask)
 
 router.route('/:taskId/todo')
   /** POST api/task/:taskId/todo - add todo */

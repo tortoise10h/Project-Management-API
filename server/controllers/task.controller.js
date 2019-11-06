@@ -778,6 +778,10 @@ class TaskController {
         }
       })
 
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project', httpStatus.UNAUTHORIZED))
+      }
+
       if (userProjectInfo.role === constant.USER_ROLE.MEMBER) {
         /** If user is member only allow they delete task was made by them */
         if (task.created_by !== author.id) {
