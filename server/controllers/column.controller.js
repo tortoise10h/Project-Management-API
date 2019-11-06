@@ -185,6 +185,96 @@ class ColumnController {
       return next(error)
     }
   }
+
+  async deleteColumn (req, res, next) {
+    try {
+      const { author, column } = req
+
+      const {
+        Task, Media, TaskLabel, UserProject, UserTask,
+        Todo
+      } = modelFactory.getAllModels()
+
+      /** Validate user have to in project */
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          user_id: author.id,
+          project_id: column.project_id
+        }
+      })
+
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project', httpStatus.UNAUTHORIZED))
+      }
+
+      const tasksOfColumn = await Task.findAll({
+        where: { column_id: column.id },
+        attributes: ['id']
+      })
+      const tasksOfColumnIds = tasksOfColumn.map(task => task.id)
+
+      let result
+      if (userProjectInfo.role === constant.USER_ROLE.MEMBER) {
+        /** If the person who wants to delete column is MEMBER
+         * only allow MEMBER delete empty column
+        * */
+        if (tasksOfColumnIds.length === 0) {
+           await column.update({ is_deleted: true })
+        }
+        result = { is_deleted: true }
+      }
+
+      /** If author is LEADER or OWNER */
+      const sequelize = modelFactory.getConnection()
+      result = await sequelize.transaction(async (t) => {
+        /** Delete label of task in column */
+        await TaskLabel.destroy(
+          {
+            where: { task_id: { [Op.in]: tasksOfColumnIds } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete user of task in column */
+        await UserTask.destroy(
+          {
+            where: { task_id: { [Op.in]: tasksOfColumnIds } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete to do of task in column */
+        await Todo.update(
+          { is_deleted: true },
+          { where: { task_id: { [Op.in]: tasksOfColumnIds } } },
+          { transaction: t }
+        )
+
+        /** Delete media of task in column */
+        await Media.update(
+          { is_deleted: true },
+          { where: { task_id: { [Op.in]: tasksOfColumnIds } } },
+          { transaction: t }
+        )
+
+        /** Delete tasks in column */
+        await Task.update(
+          { is_deleted: true },
+          { where: { id: { [Op.in]: tasksOfColumnIds } } },
+          { transaction: t }
+        )
+
+        /** Delete column */
+        await column.update({ is_deleted: true })
+
+        return { is_deleted: true }
+      })
+
+      return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
 }
 
 module.exports = new ColumnController()
