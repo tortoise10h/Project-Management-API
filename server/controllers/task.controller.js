@@ -330,6 +330,10 @@ class TaskController {
           },
           {
             model: Todo,
+            where: {
+              is_deleted: false
+            },
+            required: false,
             attributes: {
               exclude: constant.UNNECESSARY_FIELDS
             }
