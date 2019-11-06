@@ -753,6 +753,79 @@ class TaskController {
       return next(error)
     }
   }
+
+  async deleteTask (req, res, next) {
+    try {
+      const { task, author } = req
+      const {
+        UserProject, Column, Task, TaskLabel,
+        Media, UserTask, Todo
+      } = modelFactory.getAllModels()
+      /** Get Column of task to get project id */
+      const taskInfo = await Task.findByPk(task.id, {
+        include: [{
+          model: Column,
+          attributes: ['id', 'project_id']
+        }],
+        attributes: ['id']
+      })
+
+      /** Get user in project info */
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          user_id: author.id,
+          project_id: taskInfo.Column.project_id
+        }
+      })
+
+      if (userProjectInfo.role === constant.USER_ROLE.MEMBER) {
+        /** If user is member only allow they delete task was made by them */
+        if (task.created_by !== author.id) {
+          return next(new APIError('You can not delete task of another member', httpStatus.BAD_REQUEST))
+        }
+      }
+
+      const sequelize = modelFactory.getConnection()
+      const result = await sequelize.transaction(async (t) => {
+        /** Delete label of task */
+        await TaskLabel.destroy({
+          where: { task_id: task.id }
+        }, { transaction: t })
+
+        /** Delete Member of task */
+        await UserTask.destroy({
+          where: { task_id: task.id }
+        }, { transaction: t })
+
+        /** Delete to do of task */
+        await Todo.update(
+          { is_deleted: true },
+          { where: { task_id: task.id } },
+          { transaction: t }
+        )
+
+        /** Delete media of task */
+        await Media.update(
+          { is_deleted: true },
+          { where: { task_id: task.id } },
+          { transaction: t }
+        )
+
+        /** Delete task */
+        await Task.update(
+          { is_deleted: true },
+          { where: { id: task.id } },
+          { transaction: t }
+        )
+
+        return { is_deleted: true }
+      })
+
+      return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
 }
 
 module.exports = new TaskController()
