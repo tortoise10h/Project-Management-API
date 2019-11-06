@@ -377,13 +377,13 @@ class TaskController {
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        description: Joi.string().optional(),
+        description: Joi.string().optional().allow(''),
         column_id: Joi.number().optional().min(1),
         estimated_time: Joi.number().optional(),
         estimated_time_unit: Joi.string().optional().valid([constant.TIME_UNIT.DAY, constant.TIME_UNIT.HOUR, constant.TIME_UNIT.MINUTE]),
         spent_time: Joi.number().optional(),
         spent_time_unit: Joi.string().optional().valid([constant.TIME_UNIT.DAY, constant.TIME_UNIT.HOUR, constant.TIME_UNIT.MINUTE]),
-        due_date: Joi.date().optional(),
+        due_date: Joi.date().optional().allow(null),
         index: Joi.number().optional()
       })
 
