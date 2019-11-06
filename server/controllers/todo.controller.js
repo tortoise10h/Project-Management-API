@@ -6,7 +6,7 @@ const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
 const logController = require('./log.controller')
-const { logUpdate, logAddMany } = require('../lib/log-message')
+const { logUpdate } = require('../lib/log-message')
 
 class TodoController {
   async addTodo (req, res, next) {
@@ -77,11 +77,11 @@ class TodoController {
 
   async updateTodo (req, res, next) {
     try {
-      const { todo, author } = req
+      const { todo } = req
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        status: Joi.boolean().optional().max(255)
+        status: Joi.boolean().optional()
       })
 
       /** Validate input */
@@ -120,7 +120,7 @@ class TodoController {
     try {
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
-        status: Joi.boolean().optional().max(255),
+        status: Joi.boolean().optional(),
         task_id: Joi.number().optional(),
         created_by: Joi.number().optional(),
         is_active: Joi.boolean().optional(),
@@ -181,7 +181,7 @@ class TodoController {
   async checkListTodo (req, res, next) {
     try {
       const schema = Joi.object().keys({
-        todo_ids: Joi.array().required().items(Joi.number()).min(1)
+        todo_ids: Joi.array().required().items(Joi.number())
       })
 
       /** Validate input */
