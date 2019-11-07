@@ -254,6 +254,10 @@ class ProjectController {
         include: [
           {
             model: Task,
+            where: {
+              is_deleted: false
+            },
+            required: false,
             attributes: {
               exclude: constant.UNNECESSARY_FIELDS
             }
