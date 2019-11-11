@@ -57,7 +57,7 @@ class LogController {
         from_date: fromDate, to_date: toDate
       } = validater.value
       const { project } = req
-      const { Log, Project } = modelFactory.getAllModels()
+      const { Log, Project, User } = modelFactory.getAllModels()
 
       /** Map search */
       const filter = {}
@@ -83,7 +83,14 @@ class LogController {
       })
 
       /** If project exists in req -> just show logs of that project */
-      const include = []
+      const include = [
+        {
+          model: User,
+          attributes: {
+            exclude: constant.UNNECESSARY_FIELDS
+          }
+        }
+      ]
       if (project) {
         include.push({
           model: Project,
