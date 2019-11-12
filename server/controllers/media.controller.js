@@ -5,7 +5,6 @@ const { APIError, apiResponse } = require('../helpers')
 const { constant, util } = require('../../common')
 const modelFactory = require('../models')
 const { Op } = require('sequelize')
-const fs = require('fs')
 const logController = require('./log.controller')
 const { logUpdate } = require('../lib/log-message')
 
@@ -16,14 +15,13 @@ class MediaController {
 
       /** Check when file is not uploaded */
       if (!req.file) return next(new APIError('Please add a file'), httpStatus.BAD_REQUEST)
-      const mediaName = file.originalname.slice(0, file.originalname.lastIndexOf('.'))
 
       /** Validate input */
       const schema = Joi.object().keys({
         title: Joi.string().required().max(255)
       })
 
-      const validater = Joi.validate({ title: mediaName }, schema, { abortEarly: false })
+      const validater = Joi.validate({ title: file.originalname }, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_GATEWAY))
 
       const { Media, Task, Column } = modelFactory.getAllModels()
@@ -35,7 +33,7 @@ class MediaController {
       }
 
       /** Create new media */
-      const media = await Media.create({ ...newMediaInfo })
+      const newMedia = await Media.create({ ...newMediaInfo })
 
       /** Get task include column info for log purpose */
       const taskInfo = await Task.findByPk(task.id, {
@@ -48,12 +46,12 @@ class MediaController {
 
       /** Log user activity */
       await logController.logActivity(
-        author,
+        req.author,
         constant.LOG_ACTION.ADD,
-        `${author.name} created new media "${media.title}"`,
+        `${req.author.name} created new media: [File] ${file.originalname}`,
         taskInfo.Column.project_id
       )
-      return apiResponse.success(res, media)
+      return apiResponse.success(res, newMedia)
     } catch (error) {
       return next(error)
     }
@@ -87,7 +85,7 @@ class MediaController {
 
   async updateMedia (req, res, next) {
     try {
-      const { media, file } = req
+      const { media } = req
 
       const schema = Joi.object().keys({
         title: Joi.string().optional().max(255),
@@ -100,18 +98,6 @@ class MediaController {
 
       const updateMediaInfo = { ...validater.value }
 
-      /** If has file sent => update media */
-      if (file) {
-        const mediaName = file.originalname.slice(0, file.originalname.lastIndexOf('.'))
-        updateMediaInfo.title = mediaName
-        updateMediaInfo.media_location = file.path
-      }
-
-      /** Remove old media file */
-      if (updateMediaInfo.media_location && media.media_location) {
-        fs.unlink(media.media_location, () => {})
-      }
-
       const { Column, Task } = modelFactory.getAllModels()
       /** Get task include column info for log purpose */
       const taskInfo = await Task.findByPk(media.task_id, {
@@ -122,16 +108,7 @@ class MediaController {
         }
       })
 
-      /** Log user activity */
-      const newMediaInfo = {
-        ...updateMediaInfo,
-        media_location: file.filename
-      }
-      const oldMediaInfo = {
-        title: media.title,
-        media_location: media.media_location.split('\\').pop().split('/').pop()
-      }
-      const logMessage = logUpdate(newMediaInfo, oldMediaInfo)
+      const logMessage = logUpdate(updateMediaInfo, media)
       await logController.logActivity(
         req.author,
         constant.LOG_ACTION.UPDATE,
@@ -144,6 +121,45 @@ class MediaController {
 
       /** Return new media info */
       return apiResponse.success(res, updatedMedia)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async deleteMedia (req, res, next) {
+    try {
+      const { media } = req
+      const { Column, Task, UserProject } = modelFactory.getAllModels()
+      /** Get task include column info for delete media */
+      const taskInfo = await Task.findByPk(media.task_id, {
+        attributes: ['id'],
+        include: [{
+          model: Column,
+          attributes: ['id', 'project_id']
+        }]
+      })
+
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          project_id: taskInfo.Column.project_id
+        }
+      })
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project', httpStatus.BAD_REQUEST))
+      }
+
+      /** Log user activity */
+      const fileName = media.media_location.split('\\').pop().split('/').pop().split('_').pop()
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.REMOVE,
+        `${req.author.name} deleted media: [Title] ${media.title}, [File] ${fileName}`,
+        taskInfo.Column.project_id
+      )
+
+      /** Delete media */
+      const removeMedia = await media.update({ is_deleted: true })
+      return apiResponse.success(res, removeMedia)
     } catch (error) {
       return next(error)
     }

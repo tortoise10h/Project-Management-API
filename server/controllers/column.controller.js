@@ -219,7 +219,7 @@ class ColumnController {
          * only allow MEMBER delete empty column
         * */
         if (tasksOfColumnIds.length === 0) {
-           await column.update({ is_deleted: true })
+          await column.update({ is_deleted: true })
         }
         result = { is_deleted: true }
       }
