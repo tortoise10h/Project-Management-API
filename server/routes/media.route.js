@@ -9,6 +9,8 @@ router.route('/:mediaId')
   .put(authorController.validate, upload.taskMedia, mediaController.updateMedia)
   /** GET /api/media/:mediaId - get media by id */
   .get(authorController.validate, mediaController.getMedia)
+  /** DELETE /api/media/:mediaId - delete media by id */
+  .delete(authorController.validate, mediaController.deleteMedia)
 
 router.param('mediaId', mediaController.loadMedia)
 

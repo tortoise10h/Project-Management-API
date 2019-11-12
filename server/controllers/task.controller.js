@@ -407,9 +407,6 @@ class TaskController {
       if (estimatedTime && (_.isEmpty(taskInfo.estimated_time_unit) && _.isEmpty(estimatedTimeUnit))) return next(new APIError('Time must have a unit'), httpStatus.BAD_REQUEST)
       if (spentTime && (_.isEmpty(taskInfo.spent_time_unit) && _.isEmpty(spentTimeUnit))) return next(new APIError('Time must have a unit'), httpStatus.BAD_REQUEST)
 
-      /** Update task info */
-      const updatedTask = await task.update({ ...validater.value })
-
       /** Get column info with task id get project id to log activity */
       const columnInfo = await Column.findByPk(task.column_id, {
         attributes: ['project_id', 'title']
@@ -437,6 +434,8 @@ class TaskController {
         )
       }
 
+      /** Update task info */
+      const updatedTask = await task.update({ ...validater.value })
       /** Return new task update info */
       return apiResponse.success(res, updatedTask)
     } catch (error) {
