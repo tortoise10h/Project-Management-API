@@ -7,6 +7,7 @@ const logUpdate = (validaterValue, updatedObj) => {
   Object.keys(validaterValue).forEach((key) => {
     switch (typeof validaterValue[key]) {
       case 'number':
+      case 'boolean':
       case 'string':
         logMessage += `[${constant.KEY_NAME[key]}] from "${updatedObj[key]}" to "${validaterValue[key]}", `
         break

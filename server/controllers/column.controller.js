@@ -93,6 +93,7 @@ class ColumnController {
       /** Validate input */
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
+      const updateColumnInfo = { ...validater.value }
 
       /** Validate user permission */
       const UserProject = modelFactory.getModel(constant.DB_MODEL.USER_PROJECT)
@@ -102,18 +103,20 @@ class ColumnController {
           is_deleted: false
         }
       })
-      const { is_locked: isLocked } = validater.value
-      if (isLocked && userProjectInfo.role === constant.USER_ROLE.MEMBER) return next(new APIError('You don\'t have a permission'), httpStatus.UNAUTHORIZED)
 
-      /** Update column info */
-      const updatedColumn = await column.update({ ...validater.value })
-      const logMessage = logUpdate(validater.value, column)
+      const { is_locked: isLocked } = validater.value
+      if ((isLocked === true || isLocked === false) && userProjectInfo.role === constant.USER_ROLE.MEMBER) return next(new APIError('You don\'t have a permission'), httpStatus.UNAUTHORIZED)
+
+      const logMessage = logUpdate(updateColumnInfo, column)
       await logController.logActivity(
         req.author,
         constant.LOG_ACTION.UPDATE,
         `${req.author.name} updated column: ${logMessage}`,
-        updatedColumn.project_id
+        column.project_id
       )
+
+      /** Update column info */
+      const updatedColumn = await column.update(updateColumnInfo)
 
       /** Return new column update info */
       return apiResponse.success(res, updatedColumn)
