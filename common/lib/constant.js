@@ -80,7 +80,8 @@ const constant = {
     estimated_time: 'Estimated time',
     estimated_time_unit: 'Estimated time unit',
     spent_time: 'Spent time',
-    spent_time_unit: 'Spent time unit'
+    spent_time_unit: 'Spent time unit',
+    is_locked: 'Is locked'
   },
   MONTH_IN_YEAR: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   PROJECT_TIMEZONE: 'Asia/Ho_Chi_Minh'
