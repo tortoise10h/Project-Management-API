@@ -211,7 +211,7 @@ class ColumnController {
       }
 
       const tasksOfColumn = await Task.findAll({
-        where: { column_id: column.id },
+        where: { column_id: column.id, is_deleted: false },
         attributes: ['id']
       })
       const tasksOfColumnIds = tasksOfColumn.map(task => task.id)
@@ -222,9 +222,14 @@ class ColumnController {
          * only allow MEMBER delete empty column
         * */
         if (tasksOfColumnIds.length === 0) {
+          if (column.is_locked) {
+            return next(new APIError('You don\'t have a permission'))
+          }
           await column.update({ is_deleted: true })
+          result = { is_deleted: true }
+        } else {
+          return next(new APIError('You only can delete an empty lane'))
         }
-        result = { is_deleted: true }
       }
 
       /** If author is LEADER or OWNER */

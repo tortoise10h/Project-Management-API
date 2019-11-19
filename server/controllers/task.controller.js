@@ -471,7 +471,6 @@ class TaskController {
       })
       /** Log user activity */
       if (successList.length > 0) {
-        console.log('============> Huy Debugs :>: TaskController -> addUsersToTask -> successList', successList)
         const logMessage = logAddMany(successList, 'name')
         await logController.logActivity(
           author,
