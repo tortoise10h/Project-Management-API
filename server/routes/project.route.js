@@ -19,8 +19,12 @@ router.route('/')
 router.route('/:projectId')
   /** PUT api/project/:projectId - update project */
   .put(authorController.validate, projectController.updateProject)
+
   /** GET /api/project/:projectId - get project by id */
   .get(authorController.validate, projectController.getProject)
+
+  /** DELETE /api/project/:projectId - delete project by id */
+  .delete(authorController.validate, projectController.deleteProject)
 
 router.route('/:projectId/log')
   /** GET api/project/:projectId/log - get log of project */

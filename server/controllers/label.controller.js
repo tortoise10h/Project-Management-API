@@ -161,6 +161,54 @@ class LabelController {
       return next(error)
     }
   }
+
+  async deleteLabel (req, res, next) {
+    try {
+      const { author, label } = req
+
+      const { TaskLabel, UserProject } = modelFactory.getAllModels()
+
+      /** Validate user in project */
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          user_id: author.id,
+          project_id: label.project_id
+        }
+      })
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project'), httpStatus.UNAUTHORIZED)
+      }
+
+      const sequelize = modelFactory.getConnection()
+      const result = await sequelize.transaction(async (t) => {
+        /** Delete task label */
+        await TaskLabel.destroy({
+          where: { label_id: label.id }
+        },
+        { transaction: t }
+        )
+
+        /** Delete label */
+        await label.update({
+          is_deleted: true
+        })
+
+        return { is_deleted: true }
+      })
+
+      /** Log user activity */
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.REMOVE,
+        `${req.author.name} removed: [Title] ${label.title}, [Color] ${label.color}`,
+        label.project_id
+      )
+
+      return apiResponse.success(res, result)
+    } catch (error) {
+      return next(error)
+    }
+  }
 }
 
 module.exports = new LabelController()

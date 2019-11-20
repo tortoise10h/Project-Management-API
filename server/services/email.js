@@ -69,6 +69,17 @@ const TEMPLATE = {
     <p>Go to that project <a href="${frontendPageUrl}/#/project-kanban/{{projectId}}">here</a> and have a good time!</p>
     <br />
 
+  `,
+  removeProject: `
+  ${style}
+  <h2><strong>[Banana boys]</strong> We are sorry to announce that</h2>
+  <br />
+  <p>Project {{projectName}} has been deleted by {{authorName}} at {{date}}</p>
+  <br />
+  <p>If you want to create new project, access our site and create a new</p>
+  <br />
+  <p>Have a nice day</p>
+  <br />
   `
 }
 
