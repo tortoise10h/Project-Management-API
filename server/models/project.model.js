@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize')
+const moment = require('moment')
 const IModel = require('./model.index')
 const { constant } = require('../../common')
 
@@ -59,6 +60,11 @@ class ProjectModel extends IModel {
 
     /** Sync model to database */
     await this.model.sync()
+
+    this.model.addHook('beforeUpdate', async (project) => {
+      if (project.is_active === false) project.inactivedAt = moment.utc()
+      if (project.is_deleted === true) project.deletedAt = moment.utc()
+    })
   }
 }
 

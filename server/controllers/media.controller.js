@@ -153,7 +153,7 @@ class MediaController {
       await logController.logActivity(
         req.author,
         constant.LOG_ACTION.REMOVE,
-        `${req.author.name} deleted media: [Title] ${media.title}, [File] ${fileName}`,
+        `${req.author.name} removed media: [Title] ${media.title}, [File] ${fileName}`,
         taskInfo.Column.project_id
       )
 

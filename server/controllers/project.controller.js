@@ -7,6 +7,7 @@ const modelFactory = require('../models')
 const { Op } = require('sequelize')
 const logController = require('./log.controller')
 const { logUpdate } = require('../lib/log-message')
+const { sendMail } = require('./../services/email')
 
 const compareTaskIndex = (a, b) => {
   if (a.index > b.index) {
@@ -133,6 +134,168 @@ class ProjectController {
 
       /** Return new project update info */
       return apiResponse.success(res, updatedProject)
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  async deleteProject (req, res, next) {
+    try {
+      const { author, project } = req
+
+      const {
+        Column, Label, Media, Task, TaskLabel, UserProject, Todo, UserTask, User
+      } = modelFactory.getAllModels()
+
+      /** Validate user in project */
+      const userProjectInfo = await UserProject.findOne({
+        where: {
+          user_id: author.id,
+          project_id: project.id
+        }
+      })
+      if (!userProjectInfo || userProjectInfo.is_deleted) {
+        return next(new APIError('You are not in this project'), httpStatus.UNAUTHORIZED)
+      }
+
+      /** Validate owner of project */
+      if (author.id !== project.owner) {
+        return next(new APIError('You don\'t have a permission'), httpStatus.UNAUTHORIZED)
+      }
+
+      /** Map user in project for delete */
+      const userInfo = await UserProject.findAll({
+        where: { project_id: project.id, is_deleted: false },
+        attributes: ['user_id']
+      })
+      const userInfoId = userInfo.map(user => user.user_id)
+
+      const userMailInfo = await User.findAll({
+        where: { id: { [Op.in]: userInfoId }, is_deleted: false },
+        attributes: ['email']
+      })
+      const userMail = userMailInfo.map(user => user.email).toString()
+
+      /** Map column in project for delete */
+      const columnInfo = await Column.findAll({
+        where: { project_id: project.id, is_deleted: false },
+        attributes: ['id']
+      })
+      const columnInfoId = columnInfo.map(column => column.id)
+
+      /** Map label in project for delete */
+      const labelInfo = await Label.findAll({
+        where: { project_id: project.id, is_deleted: false },
+        attributes: ['id']
+      })
+      const labelInfoId = labelInfo.map(label => label.id)
+
+      /** Map task in project for delete */
+      const taskInfo = await Task.findAll({
+        where: { column_id: { [Op.in]: columnInfoId }, is_deleted: false },
+        attributes: ['id']
+      })
+      const taskInfoId = taskInfo.map(task => task.id)
+
+      const sequelize = modelFactory.getConnection()
+      const result = await sequelize.transaction(async (t) => {
+        /** Delete all task label */
+        await TaskLabel.destroy(
+          {
+            where: { task_id: { [Op.in]: taskInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all user task */
+        await UserTask.destroy(
+          {
+            where: { task_id: { [Op.in]: taskInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all todo task */
+        await Todo.update(
+          { is_deleted: true },
+          {
+            where: { task_id: { [Op.in]: taskInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all media task */
+        await Media.update(
+          { is_deleted: true },
+          {
+            where: { task_id: { [Op.in]: taskInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all task */
+        await Task.update(
+          { is_deleted: true },
+          {
+            where: { id: { [Op.in]: taskInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all label */
+        await Label.update(
+          { is_deleted: true },
+          {
+            where: { id: { [Op.in]: labelInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all column */
+        await Column.update(
+          { is_deleted: true },
+          {
+            where: { id: { [Op.in]: columnInfoId } }
+          },
+          { transaction: t }
+        )
+
+        /** Delete all user in project */
+        await UserProject.update(
+          { is_deleted: true },
+          {
+            where: {
+              user_id: { [Op.in]: userInfoId },
+              project_id: project.id
+            }
+          },
+          { transaction: t }
+        )
+
+        /** Delete project */
+        await project.update({
+          is_deleted: true
+        })
+
+        /** Send removed project mail to all member */
+        await sendMail(
+          'removeProject',
+          {
+            authorName: author.name,
+            projectName: project.title,
+            projectId: project.id,
+            date: project.deletedAt
+          },
+          {
+            to: userMail,
+            subject: `[Banana Boys] '${project.title}' has been deleted.`
+          }
+        )
+
+        return { is_deleted: true }
+      })
+
+      return apiResponse.success(res, result)
     } catch (error) {
       return next(error)
     }
