@@ -68,7 +68,6 @@ const TEMPLATE = {
     <br />
     <p>Go to that project <a href="${frontendPageUrl}/#/project-kanban/{{projectId}}">here</a> and have a good time!</p>
     <br />
-
   `,
   removeProject: `
   ${style}
