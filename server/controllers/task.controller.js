@@ -356,10 +356,12 @@ class TaskController {
 
   async getTask (req, res, next) {
     try {
-      const { UserProject } = modelFactory.getAllModels()
+      const { author, task } = req
+      const { UserProject, Column } = modelFactory.getAllModels()
+      const columnInfo = await Column.findByPk(task.column_id)
       /** Validate user has to in project to do next */
       const userInfo = await UserProject.findOne({
-        where: { user_id: req.author.id }
+        where: { user_id: author.id, project_id: columnInfo.project_id }
       })
 
       if (!userInfo || userInfo.is_deleted) {
