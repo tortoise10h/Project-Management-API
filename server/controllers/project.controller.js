@@ -121,8 +121,6 @@ class ProjectController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      /** Update project info */
-      const updatedProject = await project.update({ ...validater.value })
       /** Log activity of user */
       const logMessage = logUpdate(validater.value, project)
       await logController.logActivity(
@@ -131,6 +129,9 @@ class ProjectController {
         `${author.name} updated project: ${logMessage}`,
         project.id
       )
+
+      /** Update project info */
+      const updatedProject = await project.update({ ...validater.value })
 
       /** Return new project update info */
       return apiResponse.success(res, updatedProject)

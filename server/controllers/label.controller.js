@@ -81,9 +81,6 @@ class LabelController {
       const validater = Joi.validate(req.body, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
 
-      /** Update label info */
-      const updatedLabel = await label.update({ ...validater.value })
-
       /** Log user activity */
       const logMessage = logUpdate(validater.value, label)
       await logController.logActivity(
@@ -92,6 +89,9 @@ class LabelController {
         `${req.author.name} updated label: ${logMessage}`,
         label.project_id
       )
+
+      /** Update label info */
+      const updatedLabel = await label.update({ ...validater.value })
 
       /** Return new label update info */
       return apiResponse.success(res, updatedLabel)
