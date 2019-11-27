@@ -9,21 +9,21 @@ const router = express.Router()
 
 router.route('/')
   /** GET api/task - list all project in system */
-  .get(authorController.validate, taskController.listTask)
+  .get(authorController.validate, taskController.task.listTask)
 
 router.route('/updateIndex')
   /** GET api/task/updateIndex - update index of task */
-  .put(authorController.validate, taskController.updateManyTaskIndex)
+  .put(authorController.validate, taskController.task.updateManyTaskIndex)
 
 router.route('/:taskId')
   /** PUT api/task/:taskId - update task */
-  .put(authorController.validate, taskController.updateTask)
+  .put(authorController.validate, taskController.task.updateTask)
 
   /** PUT api/task/:taskId - get task */
-  .get(authorController.validate, taskController.getTask)
+  .get(authorController.validate, taskController.task.getTask)
 
   /** DELETE api/task/:taskId - delete task */
-  .delete(authorController.validate, taskController.deleteTask)
+  .delete(authorController.validate, taskController.task.deleteTask)
 
 router.route('/:taskId/todo')
   /** POST api/task/:taskId/todo - add todo */
@@ -38,17 +38,17 @@ router.route('/:taskId/todo-status')
 
 router.route('/:taskId/user-not-in')
   /** GET api/task/:taskId/user-not-in - Get users not in task */
-  .get(authorController.validate, taskController.listUsersNotInTask)
+  .get(authorController.validate, taskController.task.listUsersNotInTask)
 
 router.route('/:taskId/user')
   /** GET api/task/:taskId/user - Get users of task */
-  .get(authorController.validate, taskController.getUsersOfTask)
+  .get(authorController.validate, taskController.task.getUsersOfTask)
 
   /** POST api/task/:taskId/user - Add users to task */
-  .post(authorController.validate, taskController.addUsersToTask)
+  .post(authorController.validate, taskController.task.addUsersToTask)
 
   /** DELETE api/task/:taskId/user - Delete user from task */
-  .delete(authorController.validate, taskController.manageUserTask)
+  .delete(authorController.validate, taskController.task.manageUserTask)
 
 router.route('/:taskId/media')
   /** POST api/task/:taskId/media - add media */
@@ -58,11 +58,11 @@ router.route('/:taskId/media')
 
 router.route('/:taskId/label')
   /** GET api/task/:taskId/labels - Get labels of task */
-  .get(authorController.validate, taskController.getLabelsOfTask)
+  .get(authorController.validate, taskController.task.getLabelsOfTask)
 
   /** POST api/task/:taskId/label - Manage task label */
-  .post(authorController.validate, taskController.manageTaskLabel)
+  .post(authorController.validate, taskController.task.manageTaskLabel)
 
-router.param('taskId', taskController.loadTask)
+router.param('taskId', taskController.task.loadTask)
 
 module.exports = router

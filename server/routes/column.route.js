@@ -6,18 +6,18 @@ const taskController = require('../controllers/task.controller')
 
 router.route('/:columnId')
   /** PUT /api/column/:columnId - update column */
-  .put(authorController.validate, columnController.updateColumn)
+  .put(authorController.validate, columnController.column.updateColumn)
 
   /** GET /api/column/:columnId - get column by id */
-  .get(authorController.validate, columnController.getColumn)
+  .get(authorController.validate, columnController.column.getColumn)
 
   /** DELETE /api/column/:columnId - delete column by id */
-  .delete(authorController.validate, columnController.deleteColumn)
+  .delete(authorController.validate, columnController.column.deleteColumn)
 
 router.route('/:columnId/task')
   /** POST /api/column/:columnId/task - Add new task to column */
-  .post(authorController.validate, taskController.addTask)
+  .post(authorController.validate, taskController.task.addTask)
 
-router.param('columnId', columnController.loadColumn)
+router.param('columnId', columnController.column.loadColumn)
 
 module.exports = router

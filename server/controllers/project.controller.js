@@ -8,6 +8,7 @@ const { Op } = require('sequelize')
 const logController = require('./log.controller')
 const { logUpdate } = require('../lib/log-message')
 const { sendMail } = require('./../services/email')
+const columnController = require('./column.controller')
 
 const compareTaskIndex = (a, b) => {
   if (a.index > b.index) {
@@ -145,7 +146,8 @@ class ProjectController {
       const { author, project } = req
 
       const {
-        Column, Label, Media, Task, TaskLabel, UserProject, Todo, UserTask, User
+        Column, Label, Media, Task, TaskLabel, UserProject, Todo, UserTask, User,
+        Log
       } = modelFactory.getAllModels()
 
       /** Validate user in project */
@@ -200,49 +202,6 @@ class ProjectController {
 
       const sequelize = modelFactory.getConnection()
       const result = await sequelize.transaction(async (t) => {
-        /** Delete all task label */
-        await TaskLabel.destroy(
-          {
-            where: { task_id: { [Op.in]: taskInfoId } }
-          },
-          { transaction: t }
-        )
-
-        /** Delete all user task */
-        await UserTask.destroy(
-          {
-            where: { task_id: { [Op.in]: taskInfoId } }
-          },
-          { transaction: t }
-        )
-
-        /** Delete all todo task */
-        await Todo.update(
-          { is_deleted: true },
-          {
-            where: { task_id: { [Op.in]: taskInfoId } }
-          },
-          { transaction: t }
-        )
-
-        /** Delete all media task */
-        await Media.update(
-          { is_deleted: true },
-          {
-            where: { task_id: { [Op.in]: taskInfoId } }
-          },
-          { transaction: t }
-        )
-
-        /** Delete all task */
-        await Task.update(
-          { is_deleted: true },
-          {
-            where: { id: { [Op.in]: taskInfoId } }
-          },
-          { transaction: t }
-        )
-
         /** Delete all label */
         await Label.update(
           { is_deleted: true },
@@ -252,14 +211,17 @@ class ProjectController {
           { transaction: t }
         )
 
-        /** Delete all column */
-        await Column.update(
+        /** Delete all log */
+        await Log.update(
           { is_deleted: true },
           {
-            where: { id: { [Op.in]: columnInfoId } }
+            where: { project_id: project.id }
           },
           { transaction: t }
         )
+
+        /** Delete all column and related task */
+        await columnController.deleteColumns(columnInfoId, author)
 
         /** Delete all user in project */
         await UserProject.update(

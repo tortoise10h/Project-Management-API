@@ -51,6 +51,55 @@ const processAddUsersToTask = async (task, userIds, author) => {
   return Promise.all(userIds.map(userId => addSingleUserToTask(userId)))
 }
 
+const deleteTasksAsync = async (taskIds, author) => {
+  try {
+      const {
+        Task, TaskLabel,
+        Media, UserTask, Todo
+      } = modelFactory.getAllModels()
+
+      const sequelize = modelFactory.getConnection()
+      const result = await sequelize.transaction(async (t) => {
+        /** Delete label of task */
+        await TaskLabel.destroy({
+          where: { task_id: { [Op.in]: taskIds } }
+        }, { transaction: t })
+
+        /** Delete Member of task */
+        await UserTask.destroy({
+          where: { task_id: { [Op.in]: taskIds } }
+        }, { transaction: t })
+
+        /** Delete to do of task */
+        await Todo.update(
+          { is_deleted: true },
+          { where: { task_id: { [Op.in]: taskIds } } },
+          { transaction: t }
+        )
+
+        /** Delete media of task */
+        await Media.update(
+          { is_deleted: true },
+          { where: { task_id: { [Op.in]: taskIds } } },
+          { transaction: t }
+        )
+
+        /** Delete task */
+        await Task.update(
+          { is_deleted: true },
+          { where: { id: { [Op.in]: taskIds } } },
+          { transaction: t }
+        )
+
+        return { is_deleted: true }
+      })
+
+      return [null, result]
+  } catch (error) {
+    return [error]
+  }
+}
+
 const processUpdateTasksIndex = async (tasks) => {
   const Task = modelFactory.getModel(constant.DB_MODEL.TASK)
   const updateIndexOfSingleTask = task => new Promise(async (resolve) => {
@@ -757,10 +806,8 @@ class TaskController {
   async deleteTask (req, res, next) {
     try {
       const { task, author } = req
-      const {
-        UserProject, Column, Task, TaskLabel,
-        Media, UserTask, Todo
-      } = modelFactory.getAllModels()
+      const { Task, UserProject, Column } = modelFactory.getAllModels()
+
       /** Get Column of task to get project id */
       const taskInfo = await Task.findByPk(task.id, {
         include: [{
@@ -779,7 +826,7 @@ class TaskController {
       })
 
       if (!userProjectInfo || userProjectInfo.is_deleted) {
-        return next(new APIError('You are not in this project', httpStatus.UNAUTHORIZED))
+        return next(new APIError('You are not in this project', httpStatus.BAD_REQUEST))
       }
 
       if (userProjectInfo.role === constant.USER_ROLE.MEMBER) {
@@ -788,43 +835,11 @@ class TaskController {
           return next(new APIError('You can not delete task of another member', httpStatus.BAD_REQUEST))
         }
       }
-
-      const sequelize = modelFactory.getConnection()
-      const result = await sequelize.transaction(async (t) => {
-        /** Delete label of task */
-        await TaskLabel.destroy({
-          where: { task_id: task.id }
-        }, { transaction: t })
-
-        /** Delete Member of task */
-        await UserTask.destroy({
-          where: { task_id: task.id }
-        }, { transaction: t })
-
-        /** Delete to do of task */
-        await Todo.update(
-          { is_deleted: true },
-          { where: { task_id: task.id } },
-          { transaction: t }
-        )
-
-        /** Delete media of task */
-        await Media.update(
-          { is_deleted: true },
-          { where: { task_id: task.id } },
-          { transaction: t }
-        )
-
-        /** Delete task */
-        await Task.update(
-          { is_deleted: true },
-          { where: { id: task.id } },
-          { transaction: t }
-        )
-
-        return { is_deleted: true }
-      })
-
+      
+      const [error, deleteResult] = await deleteTaskAsync([task.id], author)
+      if (error) {
+        return next(new APIError(error, httpStatus.BAD_REQUEST))
+      }
       return apiResponse.success(res, result)
     } catch (error) {
       return next(error)
@@ -832,4 +847,5 @@ class TaskController {
   }
 }
 
-module.exports = new TaskController()
+module.exports.task = new TaskController()
+module.exports.deleteTasks = deleteTasksAsync

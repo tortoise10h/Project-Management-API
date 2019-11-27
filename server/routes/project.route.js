@@ -66,9 +66,9 @@ router.route('/:projectId/label')
 
 router.route('/:projectId/column')
 /** POST api/project/column - add column */
-  .post(authorController.validate, columnController.addColumn)
+  .post(authorController.validate, columnController.column.addColumn)
 /** GET api/project/label - list all label in system, can filter */
-  .get(authorController.validate, columnController.listColumn)
+  .get(authorController.validate, columnController.column.listColumn)
 
 router.route('/:projectId/kanban')
   /** GET api/project/:projectId/kanban */

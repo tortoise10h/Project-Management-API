@@ -7,7 +7,41 @@ const modelFactory = require('../models')
 const { Op } = require('sequelize')
 const logController = require('./log.controller')
 const { logUpdate } = require('../lib/log-message')
+const taskController = require('./task.controller')
 
+const deleteColumnsAsync = async (columnIds, author) => {
+  try {
+      const {
+        Column, Task
+      } = modelFactory.getAllModels()
+
+      const tasksOfColumns = await Task.findAll({
+        where: {
+          column_id: { [Op.in]: columnIds },
+          is_deleted: false
+        },
+        attributes: ['id']
+      })
+      const tasksOfColumnIds = tasksOfColumns.map(task => task.id)
+
+      const sequelize = modelFactory.getConnection()
+      result = await sequelize.transaction(async (t) => {
+        await taskController.deleteTasks(tasksOfColumnIds, author)
+        /** Delete column */
+        await Column.update(
+          { is_deleted: true },
+          { where: { id: { [Op.in]: columnIds } } },
+          { transaction: t }
+        )
+
+        return { is_deleted: true }
+      })
+
+      return [null, result]
+  } catch (error) {
+    return [error]
+  }
+}
 class ColumnController {
   async addColumn (req, res, next) {
     try {
@@ -194,8 +228,7 @@ class ColumnController {
       const { author, column } = req
 
       const {
-        Task, Media, TaskLabel, UserProject, UserTask,
-        Todo
+        Task, UserProject
       } = modelFactory.getAllModels()
 
       /** Validate user have to in project */
@@ -232,51 +265,7 @@ class ColumnController {
         }
       }
 
-      /** If author is LEADER or OWNER */
-      const sequelize = modelFactory.getConnection()
-      result = await sequelize.transaction(async (t) => {
-        /** Delete label of task in column */
-        await TaskLabel.destroy(
-          {
-            where: { task_id: { [Op.in]: tasksOfColumnIds } }
-          },
-          { transaction: t }
-        )
-
-        /** Delete user of task in column */
-        await UserTask.destroy(
-          {
-            where: { task_id: { [Op.in]: tasksOfColumnIds } }
-          },
-          { transaction: t }
-        )
-
-        /** Delete to do of task in column */
-        await Todo.update(
-          { is_deleted: true },
-          { where: { task_id: { [Op.in]: tasksOfColumnIds } } },
-          { transaction: t }
-        )
-
-        /** Delete media of task in column */
-        await Media.update(
-          { is_deleted: true },
-          { where: { task_id: { [Op.in]: tasksOfColumnIds } } },
-          { transaction: t }
-        )
-
-        /** Delete tasks in column */
-        await Task.update(
-          { is_deleted: true },
-          { where: { id: { [Op.in]: tasksOfColumnIds } } },
-          { transaction: t }
-        )
-
-        /** Delete column */
-        await column.update({ is_deleted: true })
-
-        return { is_deleted: true }
-      })
+      await deleteColumnsAsync([column.id], author)
 
       return apiResponse.success(res, result)
     } catch (error) {
@@ -285,4 +274,5 @@ class ColumnController {
   }
 }
 
-module.exports = new ColumnController()
+module.exports.column = new ColumnController()
+module.exports.deleteColumns = deleteColumnsAsync
