@@ -62,7 +62,7 @@ const TEMPLATE = {
   addedUserToProject: `
     <h2>Congratulation!</h2>
     <br />
-    <p>You have added to {{projectName}} by {{authorName}}</p>
+    <p>You have added to [Project] {{projectName}} by {{authorName}}</p>
     <br>
     <p>{{invitationMessage}}</p>
     <br />
@@ -73,11 +73,23 @@ const TEMPLATE = {
   ${style}
   <h2><strong>[Banana boys]</strong> We are sorry to announce that</h2>
   <br />
-  <p>Project {{projectName}} has been deleted by {{authorName}} at {{date}}</p>
+  <p>[Project] {{projectName}} has been deleted by {{authorName}} at {{date}}</p>
   <br />
-  <p>If you want to create new project, access our site and create a new</p>
+  <p>If you want to create new project, access our <a href="${frontendPageUrl}/#/project">site</a> and create a new</p>
   <br />
-  <p>Have a nice day</p>
+  <p>Have a nice day!!</p>
+  <br />
+  `,
+  removeUserProject: `
+  ${style}
+  <h2><strong>[Banana boys]</strong> We are sorry to announce that</h2>
+  <br />
+  <p>You have been removed from [Project] {{projectName}} by {{authorName}}</p>
+  <br />
+  <p>If you want to become an owner of a project and can't be kicked by anybody, 
+  access our <a href="${frontendPageUrl}/#/project">site</a> and create a new project</p>
+  <br />
+  <p>Have a nice day!!</p>
   <br />
   `
 }

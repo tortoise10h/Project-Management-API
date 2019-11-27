@@ -501,6 +501,27 @@ class UserController {
       })
       if (!oldUserProject) return next(new APIError({ field: 'userId', value: userId, message: 'User is not in project' }, httpStatus.BAD_REQUEST))
 
+      await logController.logActivity(
+        author,
+        constant.LOG_ACTION.REMOVE,
+        `${author.name} removed user "${user.name}" from project "${project.title}"`,
+        project.id
+      )
+
+      /** Send mail to user who has been removed from project */
+      await sendMail(
+        'removeUserProject',
+        {
+          authorName: author.name,
+          projectName: project.title,
+          projectId: project.id
+        },
+        {
+          to: user.email,
+          subject: `[Banana Boys] You have been removed from Project '${project.title}'.`
+        }
+      )
+
       /** Remove user from project */
       await UserProject.destroy({
         where: {
@@ -509,12 +530,6 @@ class UserController {
         }
       })
 
-      await logController.logActivity(
-        author,
-        constant.LOG_ACTION.REMOVE,
-        `${author.name} removed user "${user.name}" from project`,
-        project.id
-      )
       return apiResponse.success(res, 'Remove user successfully')
     } catch (error) {
       return next(error)
