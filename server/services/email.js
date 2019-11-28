@@ -91,6 +91,11 @@ const TEMPLATE = {
   <br />
   <p>Have a nice day!!</p>
   <br />
+  `,
+  changeRoleOfUser: `
+  ${style}
+  <h2><strong></strong> Your role in the project '{{projectName}}' was changed to [{{role}}]</h2>
+  <br />
   `
 }
 

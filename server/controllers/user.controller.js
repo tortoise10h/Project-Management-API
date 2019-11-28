@@ -551,14 +551,26 @@ class UserController {
       const User = modelFactory.getModel(constant.DB_MODEL.USER)
 
       /** Get user to validate valid and user for log activity */
-      const user = await User.findByPk(userProject.user_id, {
-        attributes: ['id', 'name']
-      })
+      const user = await User.findByPk(userProject.user_id)
       if (!user || user.is_deleted) {
         return next(new APIError('User is not valid', httpStatus.BAD_REQUEST))
       }
 
       const { role } = validater.value
+
+      sendMail(
+        'changeRoleOfUser',
+        {
+          name: user.name,
+          projectName: project.title,
+          role
+        },
+        {
+          to: user.email,
+          subject: `[Banana Boys] Your role in the project '${project.title}' has changed to ${role}`
+        }
+      )
+
       const updatedUserProject = await userProject.update({
         role
       })
