@@ -146,7 +146,7 @@ class ProjectController {
       const { author, project } = req
 
       const {
-        Column, Label, Media, Task, TaskLabel, UserProject, Todo, UserTask, User,
+        Column, Label, Task, UserProject, User,
         Log
       } = modelFactory.getAllModels()
 

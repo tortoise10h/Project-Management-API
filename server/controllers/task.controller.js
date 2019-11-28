@@ -53,48 +53,48 @@ const processAddUsersToTask = async (task, userIds, author) => {
 
 const deleteTasksAsync = async (taskIds, author) => {
   try {
-      const {
-        Task, TaskLabel,
-        Media, UserTask, Todo
-      } = modelFactory.getAllModels()
+    const {
+      Task, TaskLabel,
+      Media, UserTask, Todo
+    } = modelFactory.getAllModels()
 
-      const sequelize = modelFactory.getConnection()
-      const result = await sequelize.transaction(async (t) => {
-        /** Delete label of task */
-        await TaskLabel.destroy({
-          where: { task_id: { [Op.in]: taskIds } }
-        }, { transaction: t })
+    const sequelize = modelFactory.getConnection()
+    const result = await sequelize.transaction(async (t) => {
+      /** Delete label of task */
+      await TaskLabel.destroy({
+        where: { task_id: { [Op.in]: taskIds } }
+      }, { transaction: t })
 
-        /** Delete Member of task */
-        await UserTask.destroy({
-          where: { task_id: { [Op.in]: taskIds } }
-        }, { transaction: t })
+      /** Delete Member of task */
+      await UserTask.destroy({
+        where: { task_id: { [Op.in]: taskIds } }
+      }, { transaction: t })
 
-        /** Delete to do of task */
-        await Todo.update(
-          { is_deleted: true },
-          { where: { task_id: { [Op.in]: taskIds } } },
-          { transaction: t }
-        )
+      /** Delete to do of task */
+      await Todo.update(
+        { is_deleted: true },
+        { where: { task_id: { [Op.in]: taskIds } } },
+        { transaction: t }
+      )
 
-        /** Delete media of task */
-        await Media.update(
-          { is_deleted: true },
-          { where: { task_id: { [Op.in]: taskIds } } },
-          { transaction: t }
-        )
+      /** Delete media of task */
+      await Media.update(
+        { is_deleted: true },
+        { where: { task_id: { [Op.in]: taskIds } } },
+        { transaction: t }
+      )
 
-        /** Delete task */
-        await Task.update(
-          { is_deleted: true },
-          { where: { id: { [Op.in]: taskIds } } },
-          { transaction: t }
-        )
+      /** Delete task */
+      await Task.update(
+        { is_deleted: true },
+        { where: { id: { [Op.in]: taskIds } } },
+        { transaction: t }
+      )
 
-        return { is_deleted: true }
-      })
+      return { is_deleted: true }
+    })
 
-      return [null, result]
+    return [null, result]
   } catch (error) {
     return [error]
   }
@@ -835,12 +835,12 @@ class TaskController {
           return next(new APIError('You can not delete task of another member', httpStatus.BAD_REQUEST))
         }
       }
-      
-      const [error, deleteResult] = await deleteTaskAsync([task.id], author)
+
+      const [error, deleteResult] = await deleteTasksAsync([task.id], author)
       if (error) {
         return next(new APIError(error, httpStatus.BAD_REQUEST))
       }
-      return apiResponse.success(res, result)
+      return apiResponse.success(res, deleteResult)
     } catch (error) {
       return next(error)
     }
