@@ -458,7 +458,7 @@ class UserController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.ADD,
-        `${author.name} added: ${logMessage} to Project "${project.title}"`,
+        `${author.name} added: ${logMessage} to project`,
         project.id
       )
 
