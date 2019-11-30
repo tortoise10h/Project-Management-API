@@ -32,7 +32,7 @@ class LabelController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.ADD,
-        `${author.name} created a label name "${newLabelInfo.title}"`,
+        `${author.name} created new label: "${newLabelInfo.title}"`,
         project.id
       )
 
