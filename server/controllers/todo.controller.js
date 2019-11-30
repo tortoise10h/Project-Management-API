@@ -40,7 +40,7 @@ class TodoController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.ADD,
-        `${author.name} created new to do "${todo.title}"`,
+        `${author.name} created new todo: "${todo.title}"`,
         taskInfo.Column.project_id
       )
       return apiResponse.success(res, todo)
@@ -257,6 +257,15 @@ class TodoController {
       }
       /** Delete todo */
       const result = await todo.update({ is_deleted: true })
+
+      /** Log user activity */
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.REMOVE,
+        `${req.author.name} removed todo: [Title] ${todo.title}`,
+        taskInfo.Column.project_id
+      )
+
       return apiResponse.success(res, result)
     } catch (error) {
       return next(error)

@@ -458,7 +458,7 @@ class UserController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.ADD,
-        `${author.name} added: ${logMessage} to project`,
+        `${author.name} added: ${logMessage} to Project "${project.title}"`,
         project.id
       )
 
@@ -504,7 +504,7 @@ class UserController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.REMOVE,
-        `${author.name} removed user "${user.name}" from project "${project.title}"`,
+        `${author.name} removed user: "${user.name}" from project "${project.title}"`,
         project.id
       )
 

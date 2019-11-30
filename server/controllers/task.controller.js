@@ -343,7 +343,7 @@ class TaskController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.ADD,
-        `${author.name} created new task "${newTask.title}"`,
+        `${author.name} created new task: "${newTask.title}"`,
         column.project_id
       )
       return apiResponse.success(res, newTask)
@@ -472,7 +472,7 @@ class TaskController {
         await logController.logActivity(
           req.author,
           constant.LOG_ACTION.MOVE_TASK,
-          `${req.author.name} moved task "${task.title}" from column "${columnInfo.title}" to column "${newColumnInfo.title}"`,
+          `${req.author.name} moved task: "${task.title}" from column "${columnInfo.title}" to column "${newColumnInfo.title}"`,
           columnInfo.project_id
         )
       } else {
@@ -526,7 +526,7 @@ class TaskController {
         await logController.logActivity(
           author,
           constant.LOG_ACTION.ADD,
-          `${author.name} added: ${logMessage} to task`,
+          `${author.name} added: "${logMessage}" to task "${task.title}"`,
           columnInfo.project_id
         )
       }
@@ -840,6 +840,15 @@ class TaskController {
       if (error) {
         return next(new APIError(error, httpStatus.BAD_REQUEST))
       }
+
+      /** Log user activity */
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.REMOVE,
+        `${req.author.name} removed task: "${task.title}"`,
+        taskInfo.Column.project_id
+      )
+
       return apiResponse.success(res, deleteResult)
     } catch (error) {
       return next(error)

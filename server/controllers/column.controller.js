@@ -11,33 +11,33 @@ const taskController = require('./task.controller')
 
 const deleteColumnsAsync = async (columnIds, author) => {
   try {
-      const {
-        Column, Task
-      } = modelFactory.getAllModels()
+    const {
+      Column, Task
+    } = modelFactory.getAllModels()
 
-      const tasksOfColumns = await Task.findAll({
-        where: {
-          column_id: { [Op.in]: columnIds },
-          is_deleted: false
-        },
-        attributes: ['id']
-      })
-      const tasksOfColumnIds = tasksOfColumns.map(task => task.id)
+    const tasksOfColumns = await Task.findAll({
+      where: {
+        column_id: { [Op.in]: columnIds },
+        is_deleted: false
+      },
+      attributes: ['id']
+    })
+    const tasksOfColumnIds = tasksOfColumns.map(task => task.id)
 
-      const sequelize = modelFactory.getConnection()
-      result = await sequelize.transaction(async (t) => {
-        await taskController.deleteTasks(tasksOfColumnIds, author)
-        /** Delete column */
-        await Column.update(
-          { is_deleted: true },
-          { where: { id: { [Op.in]: columnIds } } },
-          { transaction: t }
-        )
+    const sequelize = modelFactory.getConnection()
+    result = await sequelize.transaction(async (t) => {
+      await taskController.deleteTasks(tasksOfColumnIds, author)
+      /** Delete column */
+      await Column.update(
+        { is_deleted: true },
+        { where: { id: { [Op.in]: columnIds } } },
+        { transaction: t }
+      )
 
-        return { is_deleted: true }
-      })
+      return { is_deleted: true }
+    })
 
-      return [null, result]
+    return [null, result]
   } catch (error) {
     return [error]
   }
@@ -78,7 +78,7 @@ class ColumnController {
       await logController.logActivity(
         author,
         constant.LOG_ACTION.ADD,
-        `${author.name} created new column "${createColumn.title}"`,
+        `${author.name} created new column: "${createColumn.title}"`,
         project.id
       )
       return apiResponse.success(res, createColumn)
@@ -145,7 +145,7 @@ class ColumnController {
       await logController.logActivity(
         req.author,
         constant.LOG_ACTION.UPDATE,
-        `${req.author.name} updated column: ${logMessage}`,
+        `${req.author.name} updated column "${column.title}": ${logMessage}`,
         column.project_id
       )
 
@@ -264,6 +264,14 @@ class ColumnController {
           return next(new APIError('You only can delete an empty lane'))
         }
       }
+
+      /** Log user activity */
+      await logController.logActivity(
+        req.author,
+        constant.LOG_ACTION.REMOVE,
+        `${req.author.name} removed column: [Title] ${column.title}`,
+        column.project_id
+      )
 
       await deleteColumnsAsync([column.id], author)
 
