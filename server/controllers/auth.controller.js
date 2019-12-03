@@ -148,7 +148,7 @@ class AuthController {
       if (!user) return next(new APIError('User not found', httpStatus.NOT_FOUND))
       if (user.is_deleted) return next(new APIError('User is deleted', httpStatus.BAD_REQUEST))
       if (!user.is_active) return next(new APIError('User is banned', httpStatus.BAD_REQUEST))
-      if (!user.confirmed) return next(new APIError('User is not verified', httpStatus.BAD_REQUEST))
+      if (!user.confirmed) return next(new APIError('Your account is not verified, please check your email and verify your account first', httpStatus.BAD_REQUEST))
 
       /** Check input password and password in database */
       const match = await bcrypt.compare(password, user.password)

@@ -147,12 +147,13 @@ class UserController {
         birthday: Joi.date().optional(),
         address: Joi.string().optional(),
         profile_title: Joi.string().optional(),
+        search: Joi.string().optional(),
         sort: Joi.string().optional().default('name'),
         direction: Joi.string().optional().uppercase().valid(['ASC', 'DESC'])
           .default('ASC'),
         page: Joi.number().optional().min(1).default(1),
         offset: Joi.number().optional().min(1).max(constant.SERVER.API_MAX_OFFSET)
-          .default(constant.SERVER.API_DEFAULT_OFFSET),
+          .default(30),
         is_active: Joi.boolean().optional()
       })
 
@@ -160,16 +161,16 @@ class UserController {
       const validater = Joi.validate(req.query, schema, { abortEarly: false })
       if (validater.error) return next(new APIError(util.collectError(validater.error.details), httpStatus.BAD_REQUEST))
       const {
-        sort, direction, page, offset
+        sort, direction, page, offset, search
       } = validater.value
 
       const { User, UserProject } = modelFactory.getAllModels()
       const { project } = req
 
       /** Map search */
-      const filter = {}
+      let filter = {}
       Object.keys(validater.value).forEach((key) => {
-        if (!['sort', 'direction', 'page', 'offset'].includes(key)) {
+        if (!['sort', 'direction', 'page', 'offset', 'search'].includes(key)) {
           switch (typeof validater.value[key]) {
             case 'string':
               filter[key] = { [Op.like]: `%${validater.value[key]}%` }
@@ -179,6 +180,18 @@ class UserController {
           }
         }
       })
+
+      let nameAndEmailSearch
+      if (search) {
+        nameAndEmailSearch = {
+          [Op.or]: [
+            { email: { [Op.like]: `%${search}%` } },
+            { name: { [Op.like]: `%${search}%` } }
+          ]
+        }
+      }
+
+      filter = { ...filter, ...nameAndEmailSearch }
 
       /** Get list user in project */
       const userInProject = await UserProject.findAll({
